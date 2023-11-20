@@ -7,18 +7,30 @@ import {
   Body,
   ParseIntPipe,
   Param,
+  ClassSerializerInterceptor,
+  UseInterceptors,
+  HttpCode,
+  Query,
+  HttpStatus,
 } from '@nestjs/common';
+import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
+import { PageDto } from 'src/core/dtos/pagination/page.dto';
+import { User } from 'src/typeorm/entities/User';
 import { CreateUser } from 'src/users/dtos/CreateUser.dto';
 import { UpdateUser } from 'src/users/dtos/UpdateUser.dto';
 import { UsersService } from 'src/users/services/users/users.service';
 
 @Controller('users')
+@UseInterceptors(ClassSerializerInterceptor)
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
   @Get()
-  async getUsers() {
-    return this.usersService.findUsers();
+  @HttpCode(HttpStatus.OK)
+  async getUsers(
+    @Query() pageOptionsDto: PageOptionsDto,
+  ): Promise<PageDto<User>> {
+    return this.usersService.getUsers(pageOptionsDto);
   }
 
   @Post()
@@ -28,16 +40,16 @@ export class UsersController {
   }
 
   @Put(':id')
-  async updateUserById(
+  updateUserById(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUserDto: UpdateUser,
   ) {
-    await this.usersService.updateUser(id, updateUserDto);
+    this.usersService.updateUser(id, updateUserDto);
     return { msg: 'berhasil ubah data' };
   }
   @Delete(':id')
-  async deleteUserById(@Param('id', ParseIntPipe) id: number) {
-    await this.usersService.deleteUser(id);
+  deleteUserById(@Param('id', ParseIntPipe) id: number) {
+    this.usersService.deleteUser(id);
     return { msg: 'berhasil hapus data' };
   }
 }

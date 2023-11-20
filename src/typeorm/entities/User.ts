@@ -1,25 +1,22 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column } from 'typeorm';
+import { AbstractEntity } from './Abstract';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity({ name: 'users' })
-export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+export class User extends AbstractEntity {
+  @ApiPropertyOptional()
+  @Column()
+  public username: string;
 
+  @ApiPropertyOptional()
+  @Column()
+  public name: string;
+
+  @ApiPropertyOptional()
   @Column({ unique: true })
-  username: string;
+  public email: string;
 
-  @Column()
-  name: string;
-
-  @Column()
-  email: string;
-
-  @Column()
-  no_telepon: string;
-
-  @Column()
-  password: string;
-
-  @Column()
-  createdAt: Date;
+  @ApiPropertyOptional()
+  @Column({ unique: true })
+  public no_telepon: string;
 }
