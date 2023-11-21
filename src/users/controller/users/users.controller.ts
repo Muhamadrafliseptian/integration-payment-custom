@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
 import { PageDto } from 'src/core/dtos/pagination/page.dto';
+import { RolesDto } from 'src/core/dtos/roles/roles.dto';
 import { User } from 'src/typeorm/entities/User';
 import { CreateUser } from 'src/users/dtos/CreateUser.dto';
 import { UpdateUser } from 'src/users/dtos/UpdateUser.dto';
@@ -39,6 +40,11 @@ export class UsersController {
     return { msg: 'berhasil registrasi' };
   }
 
+  @Get(':id')
+  getUserById(@Param('id', ParseIntPipe) id: number) {
+    this.usersService.getUsersById(id);
+  }
+
   @Put(':id')
   updateUserById(
     @Param('id', ParseIntPipe) id: number,
@@ -51,5 +57,13 @@ export class UsersController {
   deleteUserById(@Param('id', ParseIntPipe) id: number) {
     this.usersService.deleteUser(id);
     return { msg: 'berhasil hapus data' };
+  }
+
+  @Post(':id/profiles')
+  createUserProfile(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() createUserProfileDto: RolesDto,
+  ) {
+    return this.usersService.createRoles(id, createUserProfileDto);
   }
 }

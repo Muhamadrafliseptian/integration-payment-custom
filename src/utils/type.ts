@@ -13,3 +13,7 @@ export type UpdateUserParams = {
   email: string;
   no_telepon: string;
 };
+
+export type RolesParams = {
+  roles_name: string;
+};

@@ -1,4 +1,5 @@
 import { Exclude } from 'class-transformer';
+import { IsNotEmpty } from 'class-validator';
 import { CreateDateColumn, PrimaryGeneratedColumn } from 'typeorm';
 
 export abstract class AbstractEntity {
@@ -6,6 +7,7 @@ export abstract class AbstractEntity {
   @Exclude()
   public id: number;
 
+  @IsNotEmpty()
   @Exclude()
   public password: string;
 

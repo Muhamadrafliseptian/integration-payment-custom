@@ -1,23 +1,22 @@
 import { IsNotEmpty, IsEmail, IsString } from 'class-validator';
-import { Exclude } from 'class-transformer';
 
 export class CreateUser {
   @IsNotEmpty()
   @IsString()
-  username: string;
-
-  @IsNotEmpty()
-  @Exclude()
-  password: string;
+  public username: string;
 
   @IsEmail()
   @IsNotEmpty()
   @IsString()
-  email: string;
+  public email: string;
 
   @IsNotEmpty()
   @IsString()
-  name: string;
+  public name: string;
 
-  no_telepon: string;
+  @IsNotEmpty()
+  public no_telepon: string;
+
+  @IsNotEmpty()
+  public password: string;
 }

@@ -1,6 +1,7 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, JoinColumn, OneToOne } from 'typeorm';
 import { AbstractEntity } from './Abstract';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Role } from './Roles';
 
 @Entity({ name: 'users' })
 export class User extends AbstractEntity {
@@ -19,4 +20,8 @@ export class User extends AbstractEntity {
   @ApiPropertyOptional()
   @Column({ unique: true })
   public no_telepon: string;
+
+  @OneToOne(() => Role)
+  @JoinColumn()
+  role: Role;
 }

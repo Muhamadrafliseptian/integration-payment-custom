@@ -5,6 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { Layanan } from './typeorm/entities/Layanan';
 import { LayananModule } from './core/layanan/layanan.module';
+import { RolesModule } from './core/roles/roles.module';
+import { Role } from './typeorm/entities/Roles';
 
 @Module({
   imports: [
@@ -15,11 +17,12 @@ import { LayananModule } from './core/layanan/layanan.module';
       username: 'root',
       password: 'RafliKece26_',
       database: 'db_integration_payment',
-      entities: [User, Layanan],
+      entities: [User, Layanan, Role],
       synchronize: true,
     }),
     UsersModule,
     LayananModule,
+    RolesModule,
   ],
   providers: [AppService],
 })
