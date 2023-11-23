@@ -59,7 +59,7 @@ export class UsersController {
     return { msg: 'berhasil hapus data' };
   }
 
-  @Post(':id/profiles')
+  @Post(':id/roles')
   createUserProfile(
     @Param('id', ParseIntPipe) id: number,
     @Body() createUserProfileDto: RolesDto,

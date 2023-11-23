@@ -7,6 +7,8 @@ import { Layanan } from './typeorm/entities/Layanan';
 import { LayananModule } from './core/layanan/layanan.module';
 import { RolesModule } from './core/roles/roles.module';
 import { Role } from './typeorm/entities/Roles';
+import { XenditEntity } from './typeorm/entities/Xendit';
+import { BcaModule } from './core/payment/bca/bca/bca.module';
 
 @Module({
   imports: [
@@ -17,12 +19,13 @@ import { Role } from './typeorm/entities/Roles';
       username: 'root',
       password: 'RafliKece26_',
       database: 'db_integration_payment',
-      entities: [User, Layanan, Role],
+      entities: [User, Layanan, Role, XenditEntity],
       synchronize: true,
     }),
     UsersModule,
     LayananModule,
     RolesModule,
+    BcaModule,
   ],
   providers: [AppService],
 })

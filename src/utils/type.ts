@@ -17,3 +17,10 @@ export type UpdateUserParams = {
 export type RolesParams = {
   roles_name: string;
 };
+
+export type PaymentParams = {
+  reference_id: string;
+  amount: string;
+  customer: string;
+  currency: string;
+};
