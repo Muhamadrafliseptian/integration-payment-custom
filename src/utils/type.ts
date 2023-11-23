@@ -19,8 +19,27 @@ export type RolesParams = {
 };
 
 export type PaymentParams = {
+  invoice_id: string;
+  xendit_id: string;
+  business_id: string;
   reference_id: string;
-  amount: string;
+  authentication_id: string;
+  token_id: string;
+  card_info: string;
+  status: string;
+  amount: number;
+  description: string;
   customer: string;
-  currency: string;
+  items: string;
+  actions: string;
+  account_numbers: string;
+  bank_code: string;
+  merchant_code: string;
+  is_closed: boolean;
+  is_single_use: boolean;
+  country: string;
+  payment_method: string;
+  payment_channel: string;
+  expiration_date: string;
+  others: string;
 };

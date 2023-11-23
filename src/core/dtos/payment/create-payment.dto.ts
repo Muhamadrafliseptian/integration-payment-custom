@@ -18,7 +18,7 @@ export class CreatePayment {
 
   invoice_id: string;
   xendit_id: string;
-  bussiness_id: string;
+  business_id: string;
   reference_id: string;
   authentication_id: string;
   token_id: string;
