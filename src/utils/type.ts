@@ -22,7 +22,7 @@ export type PaymentParams = {
   invoice_id: string;
   xendit_id: string;
   business_id: string;
-  reference_id: string;
+  external_id: string;
   authentication_id: string;
   token_id: string;
   card_info: string;
@@ -37,9 +37,17 @@ export type PaymentParams = {
   merchant_code: string;
   is_closed: boolean;
   is_single_use: boolean;
-  country: string;
+  currency: string;
   payment_method: string;
   payment_channel: string;
   expiration_date: string;
   others: string;
+};
+
+export type TestPaymentsParams = {
+  external_id: string;
+  invoice_url: string;
+  status: string;
+  currency: string;
+  amount: number;
 };

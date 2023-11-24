@@ -12,6 +12,7 @@ import { Layanan } from './typeorm/entities/Layanan';
 import { Role } from './typeorm/entities/Roles';
 import { XenditEntity } from './typeorm/entities/Xendit';
 import { PaymentConfigModule } from './core/module/config/config.module';
+import { TestPayments } from './typeorm/entities/TestingPayment';
 
 @Module({
   imports: [
@@ -28,7 +29,7 @@ import { PaymentConfigModule } from './core/module/config/config.module';
           'DB_NAME',
           'db_integration_payment',
         ),
-        entities: [User, Layanan, Role, XenditEntity],
+        entities: [User, Layanan, Role, XenditEntity, TestPayments],
         synchronize: true,
       }),
       inject: [ConfigService],
@@ -41,9 +42,4 @@ import { PaymentConfigModule } from './core/module/config/config.module';
   ],
   providers: [AppService],
 })
-export class AppModule {
-  constructor(private readonly configService: ConfigService) {
-    const apiKey = this.configService.get<string>('XENDIT_API_KEY');
-    console.log('API Key:', apiKey);
-  }
-}
+export class AppModule {}

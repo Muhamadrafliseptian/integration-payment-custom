@@ -21,7 +21,7 @@ export class XenditEntity {
   business_id: string;
 
   @Column({ nullable: true })
-  reference_id: string;
+  external_id: string;
 
   @Column({ nullable: true })
   authentication_id: string;
@@ -66,7 +66,7 @@ export class XenditEntity {
   is_single_use: boolean;
 
   @Column({ nullable: true })
-  country: string;
+  currency: string;
 
   @Column({ nullable: true })
   payment_method: string;
