@@ -9,6 +9,9 @@ export class TestPayments {
   invoice_url: string;
 
   @Column({ nullable: true })
+  user_id: string;
+
+  @Column({ nullable: true })
   external_id: string;
 
   @Column({ nullable: true })

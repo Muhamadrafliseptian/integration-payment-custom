@@ -30,8 +30,16 @@ export class PaymentController {
     return this.paymentService.createPayment(createPaymentDto);
   }
 
-  // @Post('callback')
-  // getCallback() {
-  //   return this.paymentService.getCallback();
-  // }
+  @Post('callback')
+  @HttpCode(HttpStatus.OK)
+  async updatePaymentStatusFromXenditCallback(
+    @Body() xenditCallbackData: any,
+  ): Promise<TestPayments> {
+    const { status, external_id } = xenditCallbackData;
+
+    return await this.paymentService.updatePaymentStatusByExternalId(
+      external_id,
+      status,
+    );
+  }
 }

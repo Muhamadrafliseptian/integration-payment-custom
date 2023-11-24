@@ -46,6 +46,7 @@ export type PaymentParams = {
 
 export type TestPaymentsParams = {
   external_id: string;
+  user_id: string;
   invoice_url: string;
   status: string;
   currency: string;
