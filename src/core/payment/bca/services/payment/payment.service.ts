@@ -1,25 +1,25 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { TestPaymentsParams } from 'src/utils/type';
-import { TestPayments } from 'src/typeorm/entities/TestingPayment';
+import { PaymentParams } from 'src/utils/type';
 import { Repository } from 'typeorm';
 import axios, { AxiosResponse, AxiosError } from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
 import { PageDto } from 'src/core/dtos/pagination/page.dto';
 import { PageMetaDto } from 'src/core/dtos/pagination/page-meta.dto';
+import { XenditEntity } from 'src/typeorm/entities/Xendit';
 
 @Injectable()
 export class PaymentService {
   constructor(
-    @InjectRepository(TestPayments)
-    private readonly paymentRepository: Repository<TestPayments>,
+    @InjectRepository(XenditEntity)
+    private readonly paymentRepository: Repository<XenditEntity>,
     private readonly configService: ConfigService,
   ) {}
 
   public async getPayment(
     pageOptionsDto: PageOptionsDto,
-  ): Promise<PageDto<TestPayments>> {
+  ): Promise<PageDto<XenditEntity>> {
     const queryBuilder =
       this.paymentRepository.createQueryBuilder('payment_xendits');
 
@@ -36,7 +36,7 @@ export class PaymentService {
     return new PageDto(entities, pageMetaDto);
   }
 
-  async createPayment(paymentDetails: TestPaymentsParams): Promise<any> {
+  async createPayment(paymentDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
 
     const { external_id, amount, currency } = paymentDetails;
@@ -48,7 +48,6 @@ export class PaymentService {
           amount,
           external_id,
           currency,
-          payment_methods: ['BCA'],
           is_single_use: true,
         },
         { auth: { username: apiKey, password: '' } },
@@ -57,10 +56,10 @@ export class PaymentService {
       const xenditPayment = await this.paymentRepository.save(
         this.paymentRepository.create({
           external_id: response.data.external_id,
-          user_id: response.data.user_id,
           amount: response.data.amount,
           status: response.data.status,
-          invoice_url: response.data.invoice_url,
+          expiration_date: response.data.expiry_date,
+          invoice_id: response.data.id,
         }),
       );
       await this.paymentRepository.save(xenditPayment);
@@ -80,18 +79,35 @@ export class PaymentService {
   async updatePaymentStatusByExternalId(
     externalId: string,
     newStatus: string,
-  ): Promise<TestPayments> {
+    bankCode: string,
+    paymentMethod: string,
+    paymentChannel: string,
+  ): Promise<any> {
     const payment = await this.paymentRepository.findOne({
       where: { external_id: externalId },
     });
 
     if (!payment) {
-      console.error(`Payment not found for external_id: ${externalId}`);
-      throw new HttpException('Payment not found', HttpStatus.NOT_FOUND);
+      console.error(`ga ketemu external id nya: ${externalId}`);
+      throw new HttpException('external id not found', HttpStatus.NOT_FOUND);
     }
 
     payment.status = newStatus;
+    payment.bank_code = bankCode;
+    payment.payment_method = paymentMethod;
+    payment.payment_channel = paymentChannel;
 
-    return await this.paymentRepository.save(payment);
+    const updatedPayment = await this.paymentRepository.save(payment);
+
+    const responsePayload = {
+      id: updatedPayment.id,
+      external_id: updatedPayment.external_id,
+      status: updatedPayment.status,
+      payment_method: updatedPayment.payment_method,
+      bank_code: updatedPayment.bank_code,
+      payment_channel: updatedPayment.payment_channel,
+    };
+
+    return responsePayload;
   }
 }

@@ -10,8 +10,8 @@ import {
 import { PaymentService } from '../../services/payment/payment.service';
 import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
 import { PageDto } from 'src/core/dtos/pagination/page.dto';
-import { TestPayments } from 'src/typeorm/entities/TestingPayment';
-import { TestPaymentsDto } from 'src/core/dtos/payment/test-payment.dto';
+import { CreatePayment } from 'src/core/dtos/payment/create-payment.dto';
+import { XenditEntity } from 'src/typeorm/entities/Xendit';
 
 @Controller('payment')
 export class PaymentController {
@@ -21,12 +21,12 @@ export class PaymentController {
   @HttpCode(HttpStatus.OK)
   async getPayment(
     @Query() pageOptionsDto: PageOptionsDto,
-  ): Promise<PageDto<TestPayments>> {
+  ): Promise<PageDto<XenditEntity>> {
     return this.paymentService.getPayment(pageOptionsDto);
   }
 
   @Post()
-  createPayment(@Body() createPaymentDto: TestPaymentsDto) {
+  createPayment(@Body() createPaymentDto: CreatePayment) {
     return this.paymentService.createPayment(createPaymentDto);
   }
 
@@ -34,12 +34,28 @@ export class PaymentController {
   @HttpCode(HttpStatus.OK)
   async updatePaymentStatusFromXenditCallback(
     @Body() xenditCallbackData: any,
-  ): Promise<TestPayments> {
-    const { status, external_id } = xenditCallbackData;
-
-    return await this.paymentService.updatePaymentStatusByExternalId(
-      external_id,
-      status,
-    );
+  ): Promise<any> {
+    const { status, external_id, bank_code, payment_method, payment_channel } =
+      xenditCallbackData;
+    try {
+      const updatedPayment =
+        await this.paymentService.updatePaymentStatusByExternalId(
+          external_id,
+          status,
+          bank_code,
+          payment_method,
+          payment_channel,
+        );
+      return {
+        success: true,
+        data: updatedPayment,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to update payment status',
+        error: error.message,
+      };
+    }
   }
 }
