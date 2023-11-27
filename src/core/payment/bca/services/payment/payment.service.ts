@@ -43,12 +43,23 @@ export class PaymentService {
 
     try {
       const response: AxiosResponse = await axios.post(
-        'https://api.xendit.co/v2/invoices',
+        // 'https://api.xendit.co/v2/invoices',
+        'https://api.xendit.co/payment_requests',
         {
           amount,
           external_id,
           currency,
           is_single_use: true,
+          payment_method: {
+            type: 'VIRTUAL_ACCOUNT',
+            reusability: 'ONE_TIME_USE',
+            virtual_account: {
+              channel_code: 'BSI',
+              channel_properties: {
+                customer_name: 'Hamdan',
+              },
+            },
+          },
         },
         { auth: { username: apiKey, password: '' } },
       );
@@ -56,10 +67,9 @@ export class PaymentService {
       const xenditPayment = await this.paymentRepository.save(
         this.paymentRepository.create({
           external_id: response.data.external_id,
+          business_id: response.data.business_id,
           amount: response.data.amount,
           status: response.data.status,
-          expiration_date: response.data.expiry_date,
-          invoice_id: response.data.id,
         }),
       );
       await this.paymentRepository.save(xenditPayment);
@@ -77,18 +87,18 @@ export class PaymentService {
   }
 
   async updatePaymentStatusByExternalId(
-    externalId: string,
+    referenceId: string,
     newStatus: string,
     bankCode: string,
     paymentMethod: string,
     paymentChannel: string,
   ): Promise<any> {
     const payment = await this.paymentRepository.findOne({
-      where: { external_id: externalId },
+      where: { external_id: referenceId },
     });
 
     if (!payment) {
-      console.error(`ga ketemu external id nya: ${externalId}`);
+      console.error(`ga ketemu external id nya: ${referenceId}`);
       throw new HttpException('external id not found', HttpStatus.NOT_FOUND);
     }
 

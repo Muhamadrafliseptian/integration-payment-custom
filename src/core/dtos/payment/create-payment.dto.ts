@@ -2,7 +2,7 @@ export class CreatePayment {
   invoice_id: string;
   xendit_id: string;
   business_id: string;
-  external_id: string = 'tnos-';
+  external_id: string;
   authentication_id: string;
   token_id: string;
   card_info: string;

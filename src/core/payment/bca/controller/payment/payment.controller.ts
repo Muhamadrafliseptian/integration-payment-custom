@@ -35,22 +35,36 @@ export class PaymentController {
   async updatePaymentStatusFromXenditCallback(
     @Body() xenditCallbackData: any,
   ): Promise<any> {
-    const { status, external_id, bank_code, payment_method, payment_channel } =
-      xenditCallbackData;
     try {
-      const updatedPayment =
-        await this.paymentService.updatePaymentStatusByExternalId(
-          external_id,
-          status,
-          bank_code,
-          payment_method,
-          payment_channel,
-        );
+      // const {
+      //   status,
+      //   external_id,
+      //   bank_code,
+      //   payment_method,
+      //   payment_channel,
+      // } = xenditCallbackData;
+
+      // console.log('Received Xendit Callback Data:', xenditCallbackData);
+
+      // if (!status || !external_id) {
+      //   throw new Error('Invalid callback data. Missing required fields.');
+      // }
+
+      // const updatedPayment =
+      //   await this.paymentService.updatePaymentStatusByExternalId(
+      //     external_id,
+      //     status,
+      //     bank_code,
+      //     payment_method,
+      //     payment_channel,
+      //   );
+
       return {
         success: true,
-        data: updatedPayment,
+        data: xenditCallbackData,
       };
     } catch (error) {
+      console.error('Error updating payment status:', error.message);
       return {
         success: false,
         message: 'Failed to update payment status',
