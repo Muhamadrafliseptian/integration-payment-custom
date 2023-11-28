@@ -2,12 +2,13 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentParams } from 'src/utils/type';
 import { Repository } from 'typeorm';
-import axios, { AxiosResponse, AxiosError } from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
 import { PageDto } from 'src/core/dtos/pagination/page.dto';
 import { PageMetaDto } from 'src/core/dtos/pagination/page-meta.dto';
 import { XenditEntity } from 'src/typeorm/entities/Xendit';
+import { VirtualAccountService } from 'src/core/services_modules/va-services';
+import axios, { AxiosError } from 'axios';
 
 @Injectable()
 export class PaymentService {
@@ -15,6 +16,7 @@ export class PaymentService {
     @InjectRepository(XenditEntity)
     private readonly paymentRepository: Repository<XenditEntity>,
     private readonly configService: ConfigService,
+    private readonly vaService: VirtualAccountService,
   ) {}
 
   public async getPayment(
@@ -39,85 +41,73 @@ export class PaymentService {
   async createPayment(paymentDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
 
-    const { external_id, amount, currency } = paymentDetails;
+    const { external_id, currency } = paymentDetails;
 
     try {
-      const response: AxiosResponse = await axios.post(
-        // 'https://api.xendit.co/v2/invoices',
-        'https://api.xendit.co/payment_requests',
+      const response = await this.vaService.createCallbackVirtualAccount(
         {
-          amount,
           external_id,
           currency,
+          is_closed: true,
           is_single_use: true,
-          payment_method: {
-            type: 'VIRTUAL_ACCOUNT',
-            reusability: 'ONE_TIME_USE',
-            virtual_account: {
-              channel_code: 'BSI',
-              channel_properties: {
-                customer_name: 'Hamdan',
-              },
-            },
-          },
+          bank_code: 'MANDIRI',
+          name: 'Hamdan Tr',
+          expected_amount: 10000,
         },
-        { auth: { username: apiKey, password: '' } },
+        apiKey,
       );
 
       const xenditPayment = await this.paymentRepository.save(
         this.paymentRepository.create({
-          external_id: response.data.external_id,
-          business_id: response.data.business_id,
+          external_id,
           amount: response.data.amount,
           status: response.data.status,
+          bank_code: response.data.bank_code,
+          account_number: response.data.account_number,
+          expiration_date: response.data.expiration_date,
         }),
       );
-      await this.paymentRepository.save(xenditPayment);
-
+      console.log(xenditPayment);
       return response.data;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const axiosError: AxiosError = error;
-        console.error('Axios error:', axiosError);
-      } else {
-        console.error('Non-Axios error:', error.message);
-      }
       throw error;
     }
   }
 
+  private handleAxiosError(error: any): void {
+    if (axios.isAxiosError(error)) {
+      const axiosError: AxiosError = error;
+      console.error('Axios error:', axiosError);
+    } else {
+      console.error('Non-Axios error:', error.message);
+    }
+  }
+
   async updatePaymentStatusByExternalId(
-    referenceId: string,
+    externalId: string,
     newStatus: string,
-    bankCode: string,
-    paymentMethod: string,
-    paymentChannel: string,
-  ): Promise<any> {
+    newAmount: number,
+  ): Promise<XenditEntity> {
     const payment = await this.paymentRepository.findOne({
-      where: { external_id: referenceId },
+      where: { external_id: externalId },
     });
 
     if (!payment) {
-      console.error(`ga ketemu external id nya: ${referenceId}`);
-      throw new HttpException('external id not found', HttpStatus.NOT_FOUND);
+      console.error(`Payment not found for external_id: ${externalId}`);
+      throw new HttpException('Payment not found', HttpStatus.NOT_FOUND);
     }
 
-    payment.status = newStatus;
-    payment.bank_code = bankCode;
-    payment.payment_method = paymentMethod;
-    payment.payment_channel = paymentChannel;
+    try {
+      payment.status = newStatus;
+      payment.amount = newAmount;
 
-    const updatedPayment = await this.paymentRepository.save(payment);
-
-    const responsePayload = {
-      id: updatedPayment.id,
-      external_id: updatedPayment.external_id,
-      status: updatedPayment.status,
-      payment_method: updatedPayment.payment_method,
-      bank_code: updatedPayment.bank_code,
-      payment_channel: updatedPayment.payment_channel,
-    };
-
-    return responsePayload;
+      return await this.paymentRepository.save(payment);
+    } catch (error) {
+      console.error('Error updating payment:', error.message);
+      throw new HttpException(
+        'Failed to update payment',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }
