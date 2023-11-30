@@ -103,7 +103,7 @@ export class PaymentService {
           channel_code: 'ID_DANA',
           amount: 10000,
           callback_url:
-            'https://eff7-2001-448a-2082-4f66-31d4-153e-3774-ffe.ngrok-free.app/payment/callback',
+            'https://eff7-2001-448a-2082-4f66-31d4-153e-3774-ffe.ngrok-free.app/payment/qrcode/callback',
           type: 'DYNAMIC',
         },
         apiKey,
@@ -126,6 +126,28 @@ export class PaymentService {
       console.error('Axios error:', axiosError);
     } else {
       console.error('Non-Axios error:', error.message);
+    }
+  }
+
+  async updatePaymentQrStatus(
+    externalId: string,
+    newAmount: number,
+    newStatus: string,
+  ): Promise<XenditEntity> {
+    try {
+      const payment = await this.paymentRepository.findOne({
+        where: { external_id: externalId },
+      });
+      payment.amount = newAmount;
+      payment.status = newStatus;
+      const updatedPayment = await this.paymentRepository.save(payment);
+      return updatedPayment;
+    } catch (error) {
+      console.error('Error updating payment:', error.message);
+      throw new HttpException(
+        'Failed to update payment',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 

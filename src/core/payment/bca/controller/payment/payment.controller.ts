@@ -41,6 +41,28 @@ export class PaymentController {
     return this.paymentService.createPaymentQr(createPaymentDto);
   }
 
+  @Post('qrcode/callback')
+  @HttpCode(HttpStatus.OK)
+  async updateQrPayment(@Body() qrCallbackData: any): Promise<XenditEntity> {
+    try {
+      const { external_id, amount, status } = qrCallbackData;
+
+      const updatedPayment = await this.paymentService.updatePaymentQrStatus(
+        external_id,
+        amount,
+        status,
+      );
+      if (updatedPayment && updatedPayment.status === status) {
+        return qrCallbackData;
+      } else {
+        throw new Error('Failed to update payment status');
+      }
+    } catch (er) {
+      console.error('Error updating payment status:', er);
+      throw new Error('Internal Server Error');
+    }
+  }
+
   @Post('callback')
   @HttpCode(HttpStatus.OK)
   async updatePaymentStatusFromXenditCallback(
