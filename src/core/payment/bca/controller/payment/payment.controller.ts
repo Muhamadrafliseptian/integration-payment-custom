@@ -35,22 +35,34 @@ export class PaymentController {
   createPayment(@Body() createPaymentDto: CreatePayment) {
     return this.paymentService.createPayment(createPaymentDto);
   }
+
+  @Post('qrcode')
+  createPaymentQr(@Body() createPaymentDto: CreatePayment) {
+    return this.paymentService.createPaymentQr(createPaymentDto);
+  }
+
   @Post('callback')
   @HttpCode(HttpStatus.OK)
   async updatePaymentStatusFromXenditCallback(
     @Body() xenditCallbackData: any,
   ): Promise<XenditEntity> {
     try {
-      const { status, external_id, amount } = xenditCallbackData;
+      const { external_id, amount, payment_id } = xenditCallbackData;
 
       const updatedPayment =
         await this.paymentService.updatePaymentStatusByExternalId(
           external_id,
-          status,
           amount,
+          payment_id,
         );
-
-      return xenditCallbackData;
-    } catch (er) {}
+      if (updatedPayment && updatedPayment.status === 'PAID') {
+        return xenditCallbackData;
+      } else {
+        throw new Error('Failed to update payment status');
+      }
+    } catch (er) {
+      console.error('Error updating payment status:', er);
+      throw new Error('Internal Server Error');
+    }
   }
 }

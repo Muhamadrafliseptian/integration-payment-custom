@@ -10,6 +10,7 @@ import { XenditEntity } from 'src/typeorm/entities/Xendit';
 import {
   VirtualAccountService,
   AvailableBankServices,
+  QrCodeService,
 } from 'src/core/services_modules/va-services';
 import axios, { AxiosError } from 'axios';
 
@@ -21,6 +22,7 @@ export class PaymentService {
     private readonly configService: ConfigService,
     private readonly vaService: VirtualAccountService,
     private readonly listBankService: AvailableBankServices,
+    private readonly qaService: QrCodeService,
   ) {}
 
   public async getPayment(
@@ -81,12 +83,41 @@ export class PaymentService {
           expiration_date: response.data.expiration_date,
         }),
       );
-      console.log(xenditPayment);
       return response.data;
     } catch (error) {
       console.log(error);
       throw error;
     }
+  }
+
+  async createPaymentQr(qrDetails: PaymentParams): Promise<any> {
+    const apiKey = this.configService.get<string>('XENDIT_API_KEY');
+
+    const { external_id, currency } = qrDetails;
+
+    try {
+      const response = await this.qaService.createQrService(
+        {
+          external_id,
+          currency,
+          channel_code: 'ID_DANA',
+          amount: 10000,
+          callback_url:
+            'https://eff7-2001-448a-2082-4f66-31d4-153e-3774-ffe.ngrok-free.app/payment/callback',
+          type: 'DYNAMIC',
+        },
+        apiKey,
+      );
+      const qrPayment = await this.paymentRepository.save(
+        this.paymentRepository.create({
+          external_id,
+          currency,
+          amount: response.data.amount,
+          status: response.data.status,
+        }),
+      );
+      return response.data;
+    } catch (err) {}
   }
 
   private handleAxiosError(error: any): void {
@@ -100,23 +131,27 @@ export class PaymentService {
 
   async updatePaymentStatusByExternalId(
     externalId: string,
-    newStatus: string,
     newAmount: number,
+    newPaymentId: string,
   ): Promise<XenditEntity> {
-    const payment = await this.paymentRepository.findOne({
-      where: { external_id: externalId },
-    });
-
-    if (!payment) {
-      console.error(`Payment not found for external_id: ${externalId}`);
-      throw new HttpException('Payment not found', HttpStatus.NOT_FOUND);
-    }
-
     try {
-      payment.status = newStatus;
-      payment.amount = newAmount;
-
-      return await this.paymentRepository.save(payment);
+      let payment = await this.paymentRepository.findOne({
+        where: { external_id: externalId },
+      });
+      if (!payment) {
+        payment = this.paymentRepository.create({
+          external_id: externalId,
+          amount: newAmount,
+          invoice_id: newPaymentId,
+          status: 'PENDING',
+        });
+      } else {
+        payment.amount = newAmount;
+        payment.invoice_id = newPaymentId;
+        payment.status = 'PAID';
+      }
+      const updatedPayment = await this.paymentRepository.save(payment);
+      return updatedPayment;
     } catch (error) {
       console.error('Error updating payment:', error.message);
       throw new HttpException(
