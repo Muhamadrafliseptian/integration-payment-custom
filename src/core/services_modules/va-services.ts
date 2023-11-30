@@ -13,3 +13,12 @@ export class VirtualAccountService {
     });
   }
 }
+
+@Injectable()
+export class AvailableBankServices {
+  async getBanks(apiKey: string): Promise<AxiosResponse> {
+    return axios.get('https://api.xendit.co/available_virtual_account_banks', {
+      auth: { username: apiKey, password: '' },
+    });
+  }
+}

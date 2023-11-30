@@ -25,51 +25,16 @@ export class PaymentController {
     return this.paymentService.getPayment(pageOptionsDto);
   }
 
-  @Post('payment/virtualaccount')
+  @Get('available_bank')
+  @HttpCode(HttpStatus.OK)
+  async getAvailableBank() {
+    return this.paymentService.getAvailableBank();
+  }
+
+  @Post('virtualaccount')
   createPayment(@Body() createPaymentDto: CreatePayment) {
     return this.paymentService.createPayment(createPaymentDto);
   }
-
-  // @Post('callback')
-  // @HttpCode(HttpStatus.OK)
-  // async updatePaymentStatusFromXenditCallback(
-  //   @Body() xenditCallbackData: any,
-  // ): Promise<any> {
-  //   try {
-  //     console.log('Received Xendit Callback Data:', xenditCallbackData);
-  //     // const {
-  //     //   status,
-  //     //   external_id,
-  //     //   bank_code,
-  //     //   payment_method,
-  //     //   payment_channel,
-  //     // } = xenditCallbackData;
-
-  //     // if (!status || !external_id) {
-  //     //   throw new Error('Invalid callback data. Missing required fields.');
-  //     // }
-
-  //     // const updatedPayment =
-  //     //   await this.paymentService.updatePaymentStatusByExternalId(
-  //     //     external_id,
-  //     //     status,
-  //     //     bank_code,
-  //     //     payment_method,
-  //     //     payment_channel,
-  //     //   );
-
-  //     return {
-  //       success: true,
-  //       data: xenditCallbackData,
-  //     };
-  //   } catch (error) {
-  //     return {
-  //       success: false,
-  //       message: 'Failed to update payment status',
-  //       error: error.message,
-  //     };
-  //   }
-  // }
   @Post('callback')
   @HttpCode(HttpStatus.OK)
   async updatePaymentStatusFromXenditCallback(

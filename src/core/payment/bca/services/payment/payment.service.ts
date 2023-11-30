@@ -7,7 +7,10 @@ import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
 import { PageDto } from 'src/core/dtos/pagination/page.dto';
 import { PageMetaDto } from 'src/core/dtos/pagination/page-meta.dto';
 import { XenditEntity } from 'src/typeorm/entities/Xendit';
-import { VirtualAccountService } from 'src/core/services_modules/va-services';
+import {
+  VirtualAccountService,
+  AvailableBankServices,
+} from 'src/core/services_modules/va-services';
 import axios, { AxiosError } from 'axios';
 
 @Injectable()
@@ -17,6 +20,7 @@ export class PaymentService {
     private readonly paymentRepository: Repository<XenditEntity>,
     private readonly configService: ConfigService,
     private readonly vaService: VirtualAccountService,
+    private readonly listBankService: AvailableBankServices,
   ) {}
 
   public async getPayment(
@@ -38,10 +42,20 @@ export class PaymentService {
     return new PageDto(entities, pageMetaDto);
   }
 
+  public async getAvailableBank() {
+    try {
+      const apiKey = this.configService.get<string>('XENDIT_API_KEY');
+      const response = await this.listBankService.getBanks(apiKey);
+      return response.data;
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
   async createPayment(paymentDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
 
-    const { external_id, currency } = paymentDetails;
+    const { external_id, currency, bank_code } = paymentDetails;
 
     try {
       const response = await this.vaService.createCallbackVirtualAccount(
@@ -50,9 +64,9 @@ export class PaymentService {
           currency,
           is_closed: true,
           is_single_use: true,
-          bank_code: 'MANDIRI',
-          name: 'Hamdan Tr',
+          bank_code,
           expected_amount: 10000,
+          name: 'Hamdan',
         },
         apiKey,
       );
@@ -70,6 +84,7 @@ export class PaymentService {
       console.log(xenditPayment);
       return response.data;
     } catch (error) {
+      console.log(error);
       throw error;
     }
   }
