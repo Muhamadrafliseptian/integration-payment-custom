@@ -11,6 +11,7 @@ import {
   VirtualAccountService,
   AvailableBankServices,
   QrCodeService,
+  EWalletService,
 } from 'src/core/services_modules/va-services';
 import axios, { AxiosError } from 'axios';
 
@@ -23,6 +24,7 @@ export class PaymentService {
     private readonly vaService: VirtualAccountService,
     private readonly listBankService: AvailableBankServices,
     private readonly qaService: QrCodeService,
+    private readonly ewalletService: EWalletService,
   ) {}
 
   public async getPayment(
@@ -120,6 +122,42 @@ export class PaymentService {
     } catch (err) {}
   }
 
+  async createPaymentEwallet(ewalletDetails: PaymentParams): Promise<any> {
+    const apiKey = this.configService.get<string>('XENDIT_API_KEY');
+
+    const { external_id, currency } = ewalletDetails;
+    const referenceId = `tnos-${Date.now()}`;
+
+    try {
+      const response = await this.ewalletService.createEwalletService(
+        {
+          currency: 'IDR',
+          reference_id: referenceId,
+          amount: 20000,
+          checkout_method: 'ONE_TIME_PAYMENT',
+          channel_code: 'ID_OVO',
+          channel_properties: {
+            mobile_number: '+6281411126356',
+          },
+        },
+        apiKey,
+      );
+      const ewalletPayment = await this.paymentRepository.save(
+        this.paymentRepository.create({
+          external_id,
+          currency,
+          reference_id: response.data.reference_id,
+          amount: response.data.charge_amount,
+          bank_code: response.data.channel_code,
+          status: response.data.status,
+        }),
+      );
+      return response.data;
+    } catch (err) {
+      return err;
+    }
+  }
+
   private handleAxiosError(error: any): void {
     if (axios.isAxiosError(error)) {
       const axiosError: AxiosError = error;
@@ -177,5 +215,25 @@ export class PaymentService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  async updateEwalletStatus(
+    referenceId: string,
+    newStatus: string,
+  ): Promise<any> {
+    const payment = await this.paymentRepository.findOne({
+      where: { reference_id: referenceId },
+    });
+
+    if (!payment) {
+      console.log(payment);
+      throw new HttpException('external id not found', HttpStatus.NOT_FOUND);
+    }
+
+    payment.status = newStatus;
+
+    const updatedPayment = await this.paymentRepository.save(payment);
+
+    return updatedPayment;
   }
 }

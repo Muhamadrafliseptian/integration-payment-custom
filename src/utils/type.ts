@@ -20,6 +20,7 @@ export type RolesParams = {
 
 export type PaymentParams = {
   invoice_id: string;
+  reference_id: string;
   xendit_id: string;
   business_id: string;
   external_id: string;

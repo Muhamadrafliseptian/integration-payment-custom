@@ -15,6 +15,9 @@ export class XenditEntity {
   invoice_id: string;
 
   @Column({ nullable: true })
+  reference_id: string;
+
+  @Column({ nullable: true })
   xendit_id: string;
 
   @Column({ nullable: true })

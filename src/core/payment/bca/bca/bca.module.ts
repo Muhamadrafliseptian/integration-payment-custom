@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { XenditEntity } from 'src/typeorm/entities/Xendit';
 import {
   AvailableBankServices,
+  EWalletService,
   QrCodeService,
   VirtualAccountService,
 } from 'src/core/services_modules/va-services';
@@ -17,6 +18,7 @@ import {
     PaymentService,
     VirtualAccountService,
     AvailableBankServices,
+    EWalletService,
     QrCodeService,
   ],
 })

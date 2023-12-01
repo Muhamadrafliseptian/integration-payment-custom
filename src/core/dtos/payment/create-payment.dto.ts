@@ -1,5 +1,6 @@
 export class CreatePayment {
   invoice_id: string;
+  reference_id: string;
   xendit_id: string;
   business_id: string;
   external_id: string = 'tnos-';

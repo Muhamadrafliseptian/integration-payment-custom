@@ -41,6 +41,11 @@ export class PaymentController {
     return this.paymentService.createPaymentQr(createPaymentDto);
   }
 
+  @Post('ewallet')
+  createPaymentEwallet(@Body() createPaymentDto: CreatePayment) {
+    return this.paymentService.createPaymentEwallet(createPaymentDto);
+  }
+
   @Post('qrcode/callback')
   @HttpCode(HttpStatus.OK)
   async updateQrPayment(@Body() qrCallbackData: any): Promise<any> {
@@ -94,6 +99,37 @@ export class PaymentController {
     } catch (er) {
       console.error('Error updating payment status:', er);
       throw new Error('Internal Server Error');
+    }
+  }
+
+  @Post('ewallet/callback')
+  @HttpCode(HttpStatus.OK)
+  async updateEwalletPayment(@Body() ewalletData: any): Promise<any> {
+    const { status, data, actions } = ewalletData;
+    const reference_id = data?.actions?.reference_id;
+    console.log(ewalletData);
+    if (!reference_id) {
+      return {
+        success: false,
+        message: 'External ID gada',
+      };
+    }
+
+    try {
+      const updatedPayment = await this.paymentService.updateEwalletStatus(
+        reference_id,
+        status,
+      );
+      return {
+        success: true,
+        data: ewalletData,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to update payment status',
+        error: error.message,
+      };
     }
   }
 }

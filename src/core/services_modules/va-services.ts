@@ -31,3 +31,15 @@ export class QrCodeService {
     });
   }
 }
+
+@Injectable()
+export class EWalletService {
+  async createEwalletService(
+    data: any,
+    apiKey: string,
+  ): Promise<AxiosResponse> {
+    return axios.post('https://api.xendit.co/ewallets/charges', data, {
+      auth: { username: apiKey, password: '' },
+    });
+  }
+}
