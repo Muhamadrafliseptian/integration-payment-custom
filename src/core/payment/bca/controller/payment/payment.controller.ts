@@ -15,7 +15,7 @@ import { XenditEntity } from 'src/typeorm/entities/Xendit';
 
 @Controller('payment')
 export class PaymentController {
-  constructor(private paymentService: PaymentService) {}
+  constructor(private paymentService: PaymentService) { }
 
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -43,23 +43,32 @@ export class PaymentController {
 
   @Post('qrcode/callback')
   @HttpCode(HttpStatus.OK)
-  async updateQrPayment(@Body() qrCallbackData: any): Promise<XenditEntity> {
-    try {
-      const { external_id, amount, status } = qrCallbackData;
+  async updateQrPayment(@Body() qrCallbackData: any): Promise<any> {
+    const { status, qr_code } = qrCallbackData;
+    const external_id = qr_code?.external_id;
 
+    if (!external_id) {
+      return {
+        success: false,
+        message: 'External ID gada',
+      };
+    }
+
+    try {
       const updatedPayment = await this.paymentService.updatePaymentQrStatus(
         external_id,
-        amount,
         status,
       );
-      if (updatedPayment && updatedPayment.status === status) {
-        return qrCallbackData;
-      } else {
-        throw new Error('Failed to update payment status');
-      }
-    } catch (er) {
-      console.error('Error updating payment status:', er);
-      throw new Error('Internal Server Error');
+      return {
+        success: true,
+        data: qrCallbackData,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to update payment status',
+        error: error.message,
+      };
     }
   }
 

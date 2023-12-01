@@ -100,7 +100,7 @@ export class PaymentService {
         {
           external_id,
           currency,
-          channel_code: 'ID_LINKAJA',
+          channel_code: 'ID_DANA',
           amount: 10000,
           callback_url:
             'https://8b51-2001-448a-2082-978d-dcb3-f6fb-bb95-3b1e.ngrok-free.app/payment/qrcode/callback',
@@ -131,24 +131,21 @@ export class PaymentService {
 
   async updatePaymentQrStatus(
     externalId: string,
-    newAmount: number,
     newStatus: string,
-  ): Promise<XenditEntity> {
-    try {
-      const payment = await this.paymentRepository.findOne({
-        where: { external_id: externalId },
-      });
-      payment.amount = newAmount;
-      payment.status = newStatus;
-      const updatedPayment = await this.paymentRepository.save(payment);
-      return updatedPayment;
-    } catch (error) {
-      console.error('Error updating payment:', error.message);
-      throw new HttpException(
-        'Failed to update payment',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+  ): Promise<any> {
+    const payment = await this.paymentRepository.findOne({
+      where: { external_id: externalId },
+    });
+
+    if (!payment) {
+      throw new HttpException('external id not found', HttpStatus.NOT_FOUND);
     }
+
+    payment.status = newStatus;
+
+    const updatedPayment = await this.paymentRepository.save(payment);
+
+    return updatedPayment;
   }
 
   async updatePaymentStatusByExternalId(
@@ -175,7 +172,6 @@ export class PaymentService {
       const updatedPayment = await this.paymentRepository.save(payment);
       return updatedPayment;
     } catch (error) {
-      console.error('Error updating payment:', error.message);
       throw new HttpException(
         'Failed to update payment',
         HttpStatus.INTERNAL_SERVER_ERROR,
