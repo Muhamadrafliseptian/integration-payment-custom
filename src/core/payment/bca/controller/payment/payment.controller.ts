@@ -63,7 +63,7 @@ export class PaymentController {
     }
   }
 
-  @Post('callback')
+  @Post('virtualaccount/callback')
   @HttpCode(HttpStatus.OK)
   async updatePaymentStatusFromXenditCallback(
     @Body() xenditCallbackData: any,
