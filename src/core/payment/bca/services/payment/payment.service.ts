@@ -100,10 +100,10 @@ export class PaymentService {
         {
           external_id,
           currency,
-          channel_code: 'ID_DANA',
+          channel_code: 'ID_LINKAJA',
           amount: 10000,
           callback_url:
-            'https://eff7-2001-448a-2082-4f66-31d4-153e-3774-ffe.ngrok-free.app/payment/qrcode/callback',
+            'https://8b51-2001-448a-2082-978d-dcb3-f6fb-bb95-3b1e.ngrok-free.app/payment/qrcode/callback',
           type: 'DYNAMIC',
         },
         apiKey,
