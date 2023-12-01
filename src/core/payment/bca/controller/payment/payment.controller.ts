@@ -105,10 +105,10 @@ export class PaymentController {
   @Post('ewallet/callback')
   @HttpCode(HttpStatus.OK)
   async updateEwalletPayment(@Body() ewalletData: any): Promise<any> {
-    const { status, data, actions } = ewalletData;
-    const reference_id = data?.actions?.reference_id;
+    const { status, actions } = ewalletData;
+    const external_id = actions?.reference_id;
     console.log(ewalletData);
-    if (!reference_id) {
+    if (!external_id) {
       return {
         success: false,
         message: 'External ID gada',
@@ -117,7 +117,7 @@ export class PaymentController {
 
     try {
       const updatedPayment = await this.paymentService.updateEwalletStatus(
-        reference_id,
+        external_id,
         status,
       );
       return {

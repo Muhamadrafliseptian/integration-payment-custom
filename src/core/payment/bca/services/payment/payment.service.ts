@@ -135,9 +135,10 @@ export class PaymentService {
           reference_id: referenceId,
           amount: 20000,
           checkout_method: 'ONE_TIME_PAYMENT',
-          channel_code: 'ID_OVO',
+          channel_code: 'ID_DANA',
           channel_properties: {
             mobile_number: '+6281411126356',
+            success_redirect_url: 'https://polindra.ac.id',
           },
         },
         apiKey,
@@ -218,11 +219,11 @@ export class PaymentService {
   }
 
   async updateEwalletStatus(
-    referenceId: string,
+    externalId: string,
     newStatus: string,
   ): Promise<any> {
     const payment = await this.paymentRepository.findOne({
-      where: { reference_id: referenceId },
+      where: { external_id: externalId },
     });
 
     if (!payment) {
