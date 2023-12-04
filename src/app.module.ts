@@ -13,6 +13,7 @@ import { Role } from './typeorm/entities/Roles';
 import { XenditEntity } from './typeorm/entities/Xendit';
 import { PaymentConfigModule } from './core/module/config/config.module';
 import { TestPayments } from './typeorm/entities/TestingPayment';
+import { ChannelEwalletEntity } from './typeorm/entities/ChannelEwallet';
 
 @Module({
   imports: [
@@ -29,7 +30,14 @@ import { TestPayments } from './typeorm/entities/TestingPayment';
           'DB_NAME',
           'db_integration_payment',
         ),
-        entities: [User, Layanan, Role, XenditEntity, TestPayments],
+        entities: [
+          User,
+          Layanan,
+          Role,
+          XenditEntity,
+          TestPayments,
+          ChannelEwalletEntity,
+        ],
         synchronize: true,
       }),
       inject: [ConfigService],
