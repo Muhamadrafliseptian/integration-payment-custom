@@ -14,6 +14,7 @@ import { XenditEntity } from './typeorm/entities/Xendit';
 import { PaymentConfigModule } from './core/module/config/config.module';
 import { TestPayments } from './typeorm/entities/TestingPayment';
 import { ChannelEwalletEntity } from './typeorm/entities/ChannelEwallet';
+import { ChannelEwalletModule } from './core/payment/channel_ewallet/channel_ewallet.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { ChannelEwalletEntity } from './typeorm/entities/ChannelEwallet';
     RolesModule,
     BcaModule,
     ConfigModule,
+    ChannelEwalletModule,
   ],
   providers: [AppService],
 })
