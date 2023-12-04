@@ -25,7 +25,7 @@ export class PaymentController {
     return this.paymentService.getPayment(pageOptionsDto);
   }
 
-  @Get('available_bank')
+  @Get('bank')
   @HttpCode(HttpStatus.OK)
   async getAvailableBank() {
     return this.paymentService.getAvailableBank();
