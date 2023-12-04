@@ -15,7 +15,7 @@ import { XenditEntity } from 'src/typeorm/entities/Xendit';
 
 @Controller('payment')
 export class PaymentController {
-  constructor(private paymentService: PaymentService) { }
+  constructor(private paymentService: PaymentService) {}
 
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -105,19 +105,11 @@ export class PaymentController {
   @Post('ewallet/callback')
   @HttpCode(HttpStatus.OK)
   async updateEwalletPayment(@Body() ewalletData: any): Promise<any> {
-    const { status, actions } = ewalletData;
-    const external_id = actions?.reference_id;
-    console.log(ewalletData);
-    if (!external_id) {
-      return {
-        success: false,
-        message: 'External ID gada',
-      };
-    }
-
     try {
+      const status = ewalletData?.data?.status;
+      const reference_id = ewalletData?.data?.reference_id;
       const updatedPayment = await this.paymentService.updateEwalletStatus(
-        external_id,
+        reference_id,
         status,
       );
       return {

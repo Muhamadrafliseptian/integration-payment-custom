@@ -105,7 +105,7 @@ export class PaymentService {
           channel_code: 'ID_DANA',
           amount: 10000,
           callback_url:
-            'https://8b51-2001-448a-2082-978d-dcb3-f6fb-bb95-3b1e.ngrok-free.app/payment/qrcode/callback',
+            'https://8000-2001-448a-2082-4433-6859-68bf-5a76-3f1e.ngrok-free.app/payment/qrcode/callback',
           type: 'DYNAMIC',
         },
         apiKey,
@@ -219,16 +219,16 @@ export class PaymentService {
   }
 
   async updateEwalletStatus(
-    externalId: string,
+    referenceId: string,
     newStatus: string,
   ): Promise<any> {
     const payment = await this.paymentRepository.findOne({
-      where: { external_id: externalId },
+      where: { reference_id: referenceId },
     });
 
     if (!payment) {
       console.log(payment);
-      throw new HttpException('external id not found', HttpStatus.NOT_FOUND);
+      throw new HttpException('reference id not found', HttpStatus.NOT_FOUND);
     }
 
     payment.status = newStatus;
