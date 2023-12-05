@@ -59,57 +59,73 @@ export class PaymentService {
   async createPayment(paymentDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
 
-    const { external_id, currency, bank_code } = paymentDetails;
-
     try {
       const response = await this.vaService.createCallbackVirtualAccount(
         {
-          external_id,
-          currency,
+          external_id: paymentDetails.external_id,
+          currency: paymentDetails.currency,
           is_closed: true,
           is_single_use: true,
-          bank_code,
+          bank_code: paymentDetails.bank_code,
           expected_amount: 10000,
-          name: 'Hamdan',
+          name: 'Hamdan Tr',
         },
         apiKey,
       );
 
+      const { status, bank_code, expected_amount, account_number } =
+        response.data;
+
       const xenditPayment = await this.paymentRepository.save(
         this.paymentRepository.create({
-          external_id,
+          external_id: paymentDetails.external_id,
           amount: response.data.amount,
-          status: response.data.status,
-          bank_code: response.data.bank_code,
-          account_number: response.data.account_number,
+          status,
+          bank_code,
+          account_number,
           expiration_date: response.data.expiration_date,
         }),
       );
-      return response.data;
+
+      return { status, bank_code, expected_amount, account_number };
     } catch (error) {
-      console.log(error);
-      throw error;
+      if (error.response && error.response.data) {
+        const { error_code, message } = error.response.data;
+        return {
+          success: false,
+          error: {
+            code: error_code,
+            message: message,
+          },
+        };
+      }
+
+      throw { success: false, error: { message: 'An error occurred' } };
     }
   }
 
   async createPaymentQr(qrDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
 
-    const { external_id, currency } = qrDetails;
+    const { currency } = qrDetails;
 
     try {
       const response = await this.qaService.createQrService(
         {
-          external_id,
+          external_id: qrDetails.external_id,
           currency,
           channel_code: 'ID_DANA',
           amount: 10000,
           callback_url:
-            'https://8000-2001-448a-2082-4433-6859-68bf-5a76-3f1e.ngrok-free.app/payment/qrcode/callback',
+            'https://2037-2001-448a-2082-4433-cd47-1301-6e3e-3bab.ngrok-free.app/payment/qrcode/callback',
           type: 'DYNAMIC',
         },
         apiKey,
       );
+
+      const { status, channel_code, amount, qr_string, external_id } =
+        response.data;
+
       const qrPayment = await this.paymentRepository.save(
         this.paymentRepository.create({
           external_id,
@@ -118,8 +134,19 @@ export class PaymentService {
           status: response.data.status,
         }),
       );
-      return response.data;
-    } catch (err) {}
+      return { status, channel_code, amount, qr_string, external_id };
+    } catch (error) {
+      if (error.response && error.response.data) {
+        const { error_code, message } = error.response.data;
+        return {
+          success: false,
+          error: {
+            code: error_code,
+            message: message,
+          },
+        };
+      }
+    }
   }
 
   async createPaymentEwallet(ewalletDetails: PaymentParams): Promise<any> {

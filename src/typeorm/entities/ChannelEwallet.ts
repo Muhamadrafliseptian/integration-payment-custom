@@ -14,6 +14,9 @@ export class ChannelEwalletEntity {
   @Column({ nullable: true })
   channel_name: string;
 
+  @Column({ nullable: true })
+  channel_code: string;
+
   @CreateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
