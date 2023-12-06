@@ -23,6 +23,8 @@ export class CreatePayment {
   payment_channel: string;
   expiration_date: string;
   others: string;
+  channel_code: string;
+  mobile_number: string;
 
   generateRandomExternalId() {
     this.external_id += Math.random().toString(36).substring(7);

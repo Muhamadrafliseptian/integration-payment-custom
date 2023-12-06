@@ -28,6 +28,9 @@ export class QrCodeService {
   async createQrService(data: any, apiKey: string): Promise<AxiosResponse> {
     return axios.post('https://api.xendit.co/qr_codes', data, {
       auth: { username: apiKey, password: '' },
+      headers: {
+        'api-version': '2022-07-31',
+      },
     });
   }
 }

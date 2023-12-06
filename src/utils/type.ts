@@ -43,6 +43,8 @@ export type PaymentParams = {
   payment_channel: string;
   expiration_date: string;
   others: string;
+  channel_code: string;
+  mobile_number: string;
 };
 
 export type TestPaymentsParams = {

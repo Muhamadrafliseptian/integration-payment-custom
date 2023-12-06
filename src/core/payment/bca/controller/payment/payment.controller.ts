@@ -48,25 +48,18 @@ export class PaymentController {
 
   @Post('qrcode/callback')
   @HttpCode(HttpStatus.OK)
-  async updateQrPayment(@Body() qrCallbackData: any): Promise<any> {
-    const { status, qr_code } = qrCallbackData;
-    const external_id = qr_code?.external_id;
-
-    if (!external_id) {
-      return {
-        success: false,
-        message: 'External ID gada',
-      };
-    }
-
+  async updateQqrPayment(@Body() qrData: any): Promise<any> {
     try {
+      const status = qrData?.data?.status;
+      const reference_id = qrData?.data?.reference_id;
       const updatedPayment = await this.paymentService.updatePaymentQrStatus(
-        external_id,
+        reference_id,
         status,
       );
+      console.log(qrData);
       return {
         success: true,
-        data: qrCallbackData,
+        data: qrData,
       };
     } catch (error) {
       return {
@@ -83,7 +76,13 @@ export class PaymentController {
     @Body() xenditCallbackData: any,
   ): Promise<XenditEntity> {
     try {
+      if (!xenditCallbackData) {
+        console.log('kosong data callback nya');
+      }
+
       const { external_id, amount, payment_id } = xenditCallbackData;
+
+      console.log(xenditCallbackData);
 
       const updatedPayment =
         await this.paymentService.updatePaymentStatusByExternalId(
@@ -91,6 +90,7 @@ export class PaymentController {
           amount,
           payment_id,
         );
+
       if (updatedPayment && updatedPayment.status === 'PAID') {
         return xenditCallbackData;
       } else {

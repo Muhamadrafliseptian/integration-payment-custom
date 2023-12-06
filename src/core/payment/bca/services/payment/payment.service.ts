@@ -25,7 +25,7 @@ export class PaymentService {
     private readonly listBankService: AvailableBankServices,
     private readonly qaService: QrCodeService,
     private readonly ewalletService: EWalletService,
-  ) {}
+  ) { }
 
   public async getPayment(
     pageOptionsDto: PageOptionsDto,
@@ -58,36 +58,34 @@ export class PaymentService {
 
   async createPayment(paymentDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
-
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 1);
     try {
       const response = await this.vaService.createCallbackVirtualAccount(
         {
           external_id: paymentDetails.external_id,
           currency: paymentDetails.currency,
-          is_closed: true,
+          is_closed: false,
           is_single_use: true,
           bank_code: paymentDetails.bank_code,
-          expected_amount: 10000,
           name: 'Hamdan Tr',
+          expiration_date: expiresAt,
         },
         apiKey,
       );
-
-      const { status, bank_code, expected_amount, account_number } =
-        response.data;
 
       const xenditPayment = await this.paymentRepository.save(
         this.paymentRepository.create({
           external_id: paymentDetails.external_id,
           amount: response.data.amount,
-          status,
-          bank_code,
-          account_number,
+          status: response.data.status,
+          bank_code: response.data.bank_code,
+          account_number: response.data.account_number,
           expiration_date: response.data.expiration_date,
         }),
       );
 
-      return { status, bank_code, expected_amount, account_number };
+      return response.data;
     } catch (error) {
       if (error.response && error.response.data) {
         const { error_code, message } = error.response.data;
@@ -109,32 +107,35 @@ export class PaymentService {
 
     const { currency } = qrDetails;
 
+    const reference_id = this.generateRandomWord();
+
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 1);
+
     try {
       const response = await this.qaService.createQrService(
         {
-          external_id: qrDetails.external_id,
-          currency,
-          channel_code: 'ID_DANA',
-          amount: 10000,
-          callback_url:
-            'https://2037-2001-448a-2082-4433-cd47-1301-6e3e-3bab.ngrok-free.app/payment/qrcode/callback',
+          reference_id,
           type: 'DYNAMIC',
+          currency,
+          amount: 10000,
+          channel_code: 'ID_DANA',
+          expires_at: expiresAt,
         },
         apiKey,
       );
 
-      const { status, channel_code, amount, qr_string, external_id } =
-        response.data;
-
       const qrPayment = await this.paymentRepository.save(
         this.paymentRepository.create({
-          external_id,
+          reference_id: response.data.reference_id,
           currency,
+          bank_code: response.data.channel_code,
           amount: response.data.amount,
           status: response.data.status,
+          expiration_date: response.data.expires_at,
         }),
       );
-      return { status, channel_code, amount, qr_string, external_id };
+      return response.data;
     } catch (error) {
       if (error.response && error.response.data) {
         const { error_code, message } = error.response.data;
@@ -149,10 +150,22 @@ export class PaymentService {
     }
   }
 
+  private generateRandomWord(length = 10): string {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(
+        Math.floor(Math.random() * characters.length),
+      );
+    }
+    return result;
+  }
+
   async createPaymentEwallet(ewalletDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
 
-    const { external_id, currency } = ewalletDetails;
+    const { external_id, currency, channel_code, mobile_number } =
+      ewalletDetails;
     const referenceId = `tnos-${Date.now()}`;
 
     try {
@@ -162,10 +175,10 @@ export class PaymentService {
           reference_id: referenceId,
           amount: 20000,
           checkout_method: 'ONE_TIME_PAYMENT',
-          channel_code: 'ID_DANA',
+          channel_code,
           channel_properties: {
-            mobile_number: '+6281411126356',
-            success_redirect_url: 'https://polindra.ac.id',
+            mobile_number,
+            success_redirect_url: 'http://127.0.0.1:3000/',
           },
         },
         apiKey,
@@ -182,7 +195,8 @@ export class PaymentService {
       );
       return response.data;
     } catch (err) {
-      return err;
+      console.log('error');
+      console.log(err);
     }
   }
 
@@ -196,15 +210,16 @@ export class PaymentService {
   }
 
   async updatePaymentQrStatus(
-    externalId: string,
+    referenceId: string,
     newStatus: string,
   ): Promise<any> {
     const payment = await this.paymentRepository.findOne({
-      where: { external_id: externalId },
+      where: { reference_id: referenceId },
     });
 
     if (!payment) {
-      throw new HttpException('external id not found', HttpStatus.NOT_FOUND);
+      console.log(payment);
+      throw new HttpException('reference id not found', HttpStatus.NOT_FOUND);
     }
 
     payment.status = newStatus;
