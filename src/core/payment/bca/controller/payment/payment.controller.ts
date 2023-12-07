@@ -12,10 +12,16 @@ import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
 import { PageDto } from 'src/core/dtos/pagination/page.dto';
 import { CreatePayment } from 'src/core/dtos/payment/create-payment.dto';
 import { XenditEntity } from 'src/typeorm/entities/Xendit';
+import * as express from 'express';
+import * as http from 'http';
+import * as socketIo from 'socket.io';
 
 @Controller('payment')
 export class PaymentController {
   constructor(private paymentService: PaymentService) {}
+
+  server = http.createServer(express());
+  io = new socketIo.Server(this.server);
 
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -57,6 +63,8 @@ export class PaymentController {
         status,
       );
       console.log(qrData);
+      this.io.emit('paymentUpdate', { reference_id, status });
+
       return {
         success: true,
         data: qrData,
@@ -125,3 +133,10 @@ export class PaymentController {
     }
   }
 }
+
+const server = http.createServer(express()); // Use express()
+const io = new socketIo.Server(server);
+
+server.listen(3002, () => {
+  console.log('Server is running on port 3002');
+});
