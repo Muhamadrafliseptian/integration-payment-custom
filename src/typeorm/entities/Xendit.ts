@@ -78,7 +78,7 @@ export class XenditEntity {
   payment_channel: string;
 
   @Column({ nullable: true })
-  expiration_date: string;
+  expiration_date: Date;
 
   @Column({ nullable: true, type: 'text' })
   others: string;

@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentParams } from 'src/utils/type';
-import { In, Repository } from 'typeorm';
+import { In, LessThanOrEqual, Raw, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
 import { PageDto } from 'src/core/dtos/pagination/page.dto';
@@ -75,31 +75,29 @@ export class PaymentService {
       console.log(err);
     }
   }
-
   async createPayment(paymentDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
-    const currentDateTime = new Date();
     const expiresAt = new Date();
-
     expiresAt.setHours(expiresAt.getHours() + 1);
 
     const existingPayment = await this.paymentRepository.findOne({
       where: {
         invoice_id: paymentDetails.invoice_id,
         bank_code: paymentDetails.bank_code,
-        expiration_date: currentDateTime.toISOString(), // Konversi ke format ISO 8601
+        status: 'PENDING', // Ubah status menjadi PENDING
+        expiration_date: LessThanOrEqual(expiresAt),
       },
     });
 
     if (existingPayment) {
       console.log(
-        'Cannot create a new virtual account. There is an existing payment for the same invoice_id and bank_code with an unexpired expiration_date.',
+        'Cannot create a new virtual account. There is an existing PENDING payment for the same invoice_id and bank_code with an unexpired expiration_date.',
       );
       return {
         success: false,
         error: {
           message:
-            'Cannot create a new virtual account. There is an existing payment for the same invoice_id and bank_code with an unexpired expiration_date.',
+            'Cannot create a new virtual account. There is an existing PENDING payment for the same invoice_id and bank_code with an unexpired expiration_date.',
         },
       };
     }
@@ -113,7 +111,7 @@ export class PaymentService {
           is_single_use: true,
           bank_code: paymentDetails.bank_code,
           name: 'Hamdan Tr',
-          expiration_date: expiresAt,
+          expiration_date: expiresAt.toISOString(),
         },
         apiKey,
       );
@@ -121,7 +119,7 @@ export class PaymentService {
       const xenditPayment = await this.paymentRepository.save(
         this.paymentRepository.create({
           external_id: paymentDetails.external_id,
-          invoice_id: paymentDetails.invoice_id,
+          invoice_id: 'INV-TNOS123',
           amount: response.data.amount,
           status: response.data.status,
           bank_code: response.data.bank_code,
@@ -152,19 +150,37 @@ export class PaymentService {
   async createPaymentQr(qrDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
 
-    const { currency, external_id } = qrDetails;
-
     const reference_id = this.generateRandomWord();
 
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1);
+    const existingPayment = await this.paymentRepository.findOne({
+      where: {
+        invoice_id: qrDetails.invoice_id,
+        bank_code: qrDetails.bank_code,
+        status: 'ACTIVE', // Ubah status menjadi PENDING
+        expiration_date: LessThanOrEqual(expiresAt),
+      },
+    });
 
+    if (existingPayment) {
+      console.log(
+        'Cannot create a new virtual account. There is an existing PENDING payment for the same invoice_id and bank_code with an unexpired expiration_date.',
+      );
+      return {
+        success: false,
+        error: {
+          message:
+            'Cannot create a new virtual account. There is an existing PENDING payment for the same invoice_id and bank_code with an unexpired expiration_date.',
+        },
+      };
+    }
     try {
       const response = await this.qaService.createQrService(
         {
           reference_id,
           type: 'DYNAMIC',
-          currency,
+          currency: qrDetails.currency,
           amount: 10000,
           channel_code: 'ID_DANA',
           expires_at: expiresAt,
@@ -175,9 +191,9 @@ export class PaymentService {
       const qrPayment = await this.paymentRepository.save(
         this.paymentRepository.create({
           reference_id: response.data.reference_id,
-          currency,
-          external_id,
-          invoice_id: 'INV-TNOS124',
+          currency: response.data.currency,
+          external_id: response.data.external_id,
+          invoice_id: 'INV-TNOS123',
           bank_code: response.data.channel_code,
           amount: response.data.amount,
           status: response.data.status,
@@ -236,7 +252,7 @@ export class PaymentService {
         this.paymentRepository.create({
           external_id,
           currency,
-          invoice_id: 'INV-TNOS124',
+          invoice_id: 'INV-TNOS123',
           reference_id: response.data.reference_id,
           amount: response.data.charge_amount,
           bank_code: response.data.channel_code,
