@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   Query,
 } from '@nestjs/common';
@@ -12,16 +13,14 @@ import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
 import { PageDto } from 'src/core/dtos/pagination/page.dto';
 import { CreatePayment } from 'src/core/dtos/payment/create-payment.dto';
 import { XenditEntity } from 'src/typeorm/entities/Xendit';
-import * as express from 'express';
-import * as http from 'http';
-import * as socketIo from 'socket.io';
+import { AppGateway } from 'src/core/services_modules/app.gateway';
 
 @Controller('payment')
 export class PaymentController {
-  constructor(private paymentService: PaymentService) {}
-
-  server = http.createServer(express());
-  io = new socketIo.Server(this.server);
+  constructor(
+    private paymentService: PaymentService,
+    private readonly appGateway: AppGateway,
+  ) {}
 
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -35,6 +34,22 @@ export class PaymentController {
   @HttpCode(HttpStatus.OK)
   async getAvailableBank() {
     return this.paymentService.getAvailableBank();
+  }
+
+  @Get(':invoice_id/:bank_code/get')
+  async findPayment(
+    @Param('invoice_id') invoice_id: string,
+    @Param('bank_code') bank_code: string,
+  ): Promise<XenditEntity> {
+    const paymentDetails = await this.paymentService.findPayment(
+      invoice_id,
+      bank_code,
+    );
+    if (!paymentDetails) {
+      console.log('Unable to find payment');
+    } else {
+      return paymentDetails;
+    }
   }
 
   @Post('virtualaccount')
@@ -62,9 +77,8 @@ export class PaymentController {
         reference_id,
         status,
       );
+      this.appGateway.sendStatusToClient(updatedPayment.status);
       console.log(qrData);
-      this.io.emit('paymentUpdate', { reference_id, status });
-
       return {
         success: true,
         data: qrData,
@@ -88,25 +102,23 @@ export class PaymentController {
         console.log('kosong data callback nya');
       }
 
-      const { external_id, amount, payment_id } = xenditCallbackData;
-
-      console.log(xenditCallbackData);
+      const { external_id, amount } = xenditCallbackData;
 
       const updatedPayment =
         await this.paymentService.updatePaymentStatusByExternalId(
           external_id,
           amount,
-          payment_id,
         );
 
       if (updatedPayment && updatedPayment.status === 'PAID') {
+        this.appGateway.sendStatusToClient(updatedPayment.status);
         return xenditCallbackData;
       } else {
         throw new Error('Failed to update payment status');
       }
     } catch (er) {
       console.error('Error updating payment status:', er);
-      throw new Error('Internal Server Error');
+      throw new Error('Internal Server Errorrr');
     }
   }
 
@@ -120,6 +132,7 @@ export class PaymentController {
         reference_id,
         status,
       );
+      this.appGateway.sendStatusToClient(updatedPayment.status);
       return {
         success: true,
         data: ewalletData,
@@ -133,10 +146,3 @@ export class PaymentController {
     }
   }
 }
-
-const server = http.createServer(express()); // Use express()
-const io = new socketIo.Server(server);
-
-server.listen(3002, () => {
-  console.log('Server is running on port 3002');
-});

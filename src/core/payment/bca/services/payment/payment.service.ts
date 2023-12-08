@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentParams } from 'src/utils/type';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
 import { PageDto } from 'src/core/dtos/pagination/page.dto';
@@ -14,6 +14,7 @@ import {
   EWalletService,
 } from 'src/core/services_modules/va-services';
 import axios, { AxiosError } from 'axios';
+import { AppGateway } from 'src/core/services_modules/app.gateway';
 
 @Injectable()
 export class PaymentService {
@@ -25,7 +26,26 @@ export class PaymentService {
     private readonly listBankService: AvailableBankServices,
     private readonly qaService: QrCodeService,
     private readonly ewalletService: EWalletService,
-  ) { }
+    private readonly appGateway: AppGateway,
+  ) {}
+
+  async findPayment(invoice_id: string, bank_code: string): Promise<any> {
+    try {
+      const payment = await this.paymentRepository.findOne({
+        where: { invoice_id, bank_code },
+      });
+
+      if (!payment) {
+        return null;
+      }
+
+      const { amount, status, expiration_date } = payment;
+
+      return { amount, bank_code, status, invoice_id, expiration_date };
+    } catch (error) {
+      throw error;
+    }
+  }
 
   public async getPayment(
     pageOptionsDto: PageOptionsDto,
@@ -58,8 +78,32 @@ export class PaymentService {
 
   async createPayment(paymentDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
+    const currentDateTime = new Date();
     const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 1);
+
+    expiresAt.setHours(expiresAt.getHours() + 1);
+
+    const existingPayment = await this.paymentRepository.findOne({
+      where: {
+        invoice_id: paymentDetails.invoice_id,
+        bank_code: paymentDetails.bank_code,
+        expiration_date: currentDateTime.toISOString(), // Konversi ke format ISO 8601
+      },
+    });
+
+    if (existingPayment) {
+      console.log(
+        'Cannot create a new virtual account. There is an existing payment for the same invoice_id and bank_code with an unexpired expiration_date.',
+      );
+      return {
+        success: false,
+        error: {
+          message:
+            'Cannot create a new virtual account. There is an existing payment for the same invoice_id and bank_code with an unexpired expiration_date.',
+        },
+      };
+    }
+
     try {
       const response = await this.vaService.createCallbackVirtualAccount(
         {
@@ -77,6 +121,7 @@ export class PaymentService {
       const xenditPayment = await this.paymentRepository.save(
         this.paymentRepository.create({
           external_id: paymentDetails.external_id,
+          invoice_id: paymentDetails.invoice_id,
           amount: response.data.amount,
           status: response.data.status,
           bank_code: response.data.bank_code,
@@ -85,7 +130,9 @@ export class PaymentService {
         }),
       );
 
-      return response.data;
+      this.appGateway.sendStatusToClient(response.data.status);
+
+      return xenditPayment;
     } catch (error) {
       if (error.response && error.response.data) {
         const { error_code, message } = error.response.data;
@@ -105,12 +152,12 @@ export class PaymentService {
   async createPaymentQr(qrDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
 
-    const { currency } = qrDetails;
+    const { currency, external_id } = qrDetails;
 
     const reference_id = this.generateRandomWord();
 
     const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 1);
+    expiresAt.setHours(expiresAt.getHours() + 1);
 
     try {
       const response = await this.qaService.createQrService(
@@ -129,13 +176,15 @@ export class PaymentService {
         this.paymentRepository.create({
           reference_id: response.data.reference_id,
           currency,
+          external_id,
+          invoice_id: 'INV-TNOS124',
           bank_code: response.data.channel_code,
           amount: response.data.amount,
           status: response.data.status,
           expiration_date: response.data.expires_at,
         }),
       );
-      return response.data;
+      return qrPayment;
     } catch (error) {
       if (error.response && error.response.data) {
         const { error_code, message } = error.response.data;
@@ -187,13 +236,14 @@ export class PaymentService {
         this.paymentRepository.create({
           external_id,
           currency,
+          invoice_id: 'INV-TNOS124',
           reference_id: response.data.reference_id,
           amount: response.data.charge_amount,
           bank_code: response.data.channel_code,
           status: response.data.status,
         }),
       );
-      return response.data;
+      return ewalletPayment;
     } catch (err) {
       console.log('error');
       console.log(err);
@@ -226,13 +276,18 @@ export class PaymentService {
 
     const updatedPayment = await this.paymentRepository.save(payment);
 
+    const statusesToDelete = ['PENDING', 'ACTIVE'];
+    await this.deletePaymentsByStatus(
+      updatedPayment.invoice_id,
+      statusesToDelete,
+    );
+
     return updatedPayment;
   }
 
   async updatePaymentStatusByExternalId(
     externalId: string,
     newAmount: number,
-    newPaymentId: string,
   ): Promise<XenditEntity> {
     try {
       let payment = await this.paymentRepository.findOne({
@@ -242,19 +297,57 @@ export class PaymentService {
         payment = this.paymentRepository.create({
           external_id: externalId,
           amount: newAmount,
-          invoice_id: newPaymentId,
           status: 'PENDING',
         });
       } else {
         payment.amount = newAmount;
-        payment.invoice_id = newPaymentId;
         payment.status = 'PAID';
       }
       const updatedPayment = await this.paymentRepository.save(payment);
+
+      const statusesToDelete = ['PENDING', 'ACTIVE'];
+      await this.deletePaymentsByStatus(
+        updatedPayment.invoice_id,
+        statusesToDelete,
+      );
+
       return updatedPayment;
     } catch (error) {
       throw new HttpException(
         'Failed to update payment',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async deletePaymentsByStatus(
+    invoiceId: string,
+    statuses: string[],
+  ): Promise<void> {
+    try {
+      console.log(
+        `hapus payments untuk invoice_id ${invoiceId} dengan status ${statuses.join(
+          ', ',
+        )}`,
+      );
+      const paymentsToDelete = await this.paymentRepository.find({
+        where: {
+          invoice_id: invoiceId,
+          status: In(statuses),
+        },
+      });
+      for (const payment of paymentsToDelete) {
+        await this.paymentRepository.delete(payment.id);
+      }
+      console.log(
+        `berhasil hapus payments untuk invoice_id ${invoiceId} dengan statuses ${statuses.join(
+          ', ',
+        )}`,
+      );
+    } catch (error) {
+      console.error(`Failed to delete payments: ${error.message}`);
+      throw new HttpException(
+        'Failed to delete payments',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -276,6 +369,12 @@ export class PaymentService {
     payment.status = newStatus;
 
     const updatedPayment = await this.paymentRepository.save(payment);
+
+    const statusesToDelete = ['PENDING', 'ACTIVE'];
+    await this.deletePaymentsByStatus(
+      updatedPayment.invoice_id,
+      statusesToDelete,
+    );
 
     return updatedPayment;
   }
