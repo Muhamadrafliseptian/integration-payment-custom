@@ -110,7 +110,11 @@ export class PaymentController {
           amount,
         );
 
-      if (updatedPayment && updatedPayment.status === 'PAID') {
+      if (
+        updatedPayment &&
+        updatedPayment.status === 'PAID' &&
+        updatedPayment.status_pembayaran === 'SUCCESS'
+      ) {
         this.appGateway.sendStatusToClient(updatedPayment.status);
         return xenditCallbackData;
       } else {

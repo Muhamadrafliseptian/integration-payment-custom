@@ -45,6 +45,7 @@ export type PaymentParams = {
   others: string;
   channel_code: string;
   mobile_number: string;
+  status_pembayaran: string;
 };
 
 export type TestPaymentsParams = {

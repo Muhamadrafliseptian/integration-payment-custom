@@ -78,26 +78,23 @@ export class PaymentService {
   async createPayment(paymentDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 1);
+    expiresAt.setMinutes(expiresAt.getMinutes() + 1);
 
     const existingPayment = await this.paymentRepository.findOne({
       where: {
         invoice_id: paymentDetails.invoice_id,
         bank_code: paymentDetails.bank_code,
-        status: 'PENDING', // Ubah status menjadi PENDING
         expiration_date: LessThanOrEqual(expiresAt),
+        status: 'PENDING',
       },
     });
 
     if (existingPayment) {
-      console.log(
-        'Cannot create a new virtual account. There is an existing PENDING payment for the same invoice_id and bank_code with an unexpired expiration_date.',
-      );
+      console.log('error gabisa bikin va');
       return {
         success: false,
         error: {
-          message:
-            'Cannot create a new virtual account. There is an existing PENDING payment for the same invoice_id and bank_code with an unexpired expiration_date.',
+          message: 'masih ada yang belum expired VA nya',
         },
       };
     }
@@ -125,6 +122,7 @@ export class PaymentService {
           bank_code: response.data.bank_code,
           account_number: response.data.account_number,
           expiration_date: response.data.expiration_date,
+          status_pembayaran: 'ACTIVE',
         }),
       );
 
@@ -158,7 +156,7 @@ export class PaymentService {
       where: {
         invoice_id: qrDetails.invoice_id,
         bank_code: qrDetails.bank_code,
-        status: 'ACTIVE', // Ubah status menjadi PENDING
+        status: 'ACTIVE',
         expiration_date: LessThanOrEqual(expiresAt),
       },
     });
@@ -259,7 +257,7 @@ export class PaymentService {
           status: response.data.status,
         }),
       );
-      return ewalletPayment;
+      return response.data;
     } catch (err) {
       console.log('error');
       console.log(err);
@@ -318,6 +316,7 @@ export class PaymentService {
       } else {
         payment.amount = newAmount;
         payment.status = 'PAID';
+        payment.status_pembayaran = 'SUCCESS';
       }
       const updatedPayment = await this.paymentRepository.save(payment);
 

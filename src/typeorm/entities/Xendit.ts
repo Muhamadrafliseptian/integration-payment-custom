@@ -80,6 +80,9 @@ export class XenditEntity {
   @Column({ nullable: true })
   expiration_date: Date;
 
+  @Column({ nullable: true })
+  status_pembayaran: string;
+
   @Column({ nullable: true, type: 'text' })
   others: string;
 
