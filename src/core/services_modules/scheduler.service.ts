@@ -6,7 +6,7 @@ import { PaymentService } from '../payment/bca/services/payment/payment.service'
 export class PaymentSchedulerService {
   constructor(private readonly paymentService: PaymentService) {}
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_30_MINUTES)
   async handleExpiredPayments() {
     try {
       await this.paymentService.deleteExpiredPayments();

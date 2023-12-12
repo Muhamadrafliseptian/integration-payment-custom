@@ -7,10 +7,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['log', 'error', 'warn', 'debug'],
   });
+
   dotenv.config({ path: './.env' });
+
   app.useGlobalPipes(new ValidationPipe({ stopAtFirstError: true }));
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
   app.enableCors();
-  await app.listen(3001);
+
+  const port = process.env.PORT || 3001;
+  await app.listen(port);
 }
+
 bootstrap();

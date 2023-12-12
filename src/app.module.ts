@@ -1,4 +1,3 @@
-// app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -14,6 +13,7 @@ import { PaymentConfigModule } from './core/module/config/config.module';
 import { TestPayments } from './typeorm/entities/TestingPayment';
 import { ChannelEwalletEntity } from './typeorm/entities/ChannelEwallet';
 import { ChannelEwalletModule } from './core/payment/channel_ewallet/channel_ewallet.module';
+import { SchedulerModule } from './core/module/scheduler/scheduler.module';
 
 @Module({
   imports: [
@@ -48,6 +48,7 @@ import { ChannelEwalletModule } from './core/payment/channel_ewallet/channel_ewa
     BcaModule,
     ConfigModule,
     ChannelEwalletModule,
+    SchedulerModule,
   ],
   providers: [],
 })

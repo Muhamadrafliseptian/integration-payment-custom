@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentParams } from 'src/utils/type';
-import { In, Repository } from 'typeorm';
+import { In, LessThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 // import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
 // import { PageDto } from 'src/core/dtos/pagination/page.dto';
@@ -29,26 +29,24 @@ export class PaymentService {
     private readonly appGateway: AppGateway,
   ) {}
 
+  testCron() {
+    console.log('sukses');
+  }
+
   async deleteExpiredPayments() {
     try {
+      const currentDate = new Date();
       const expiredPayments = await this.paymentRepository.find({
         where: {
           status_pembayaran: 'ACTIVE',
+          expiration_date: LessThan(currentDate.toISOString()),
         },
       });
-      console.log('====================================');
-      console.log('Expired Payments Before Deletion:');
-      console.log(expiredPayments);
-      console.log('====================================');
-
       if (expiredPayments.length > 0) {
         await this.paymentRepository.remove(expiredPayments);
-        console.log('====================================');
-        console.log('Expired Payments After Deletion:');
-        console.log(expiredPayments);
-        console.log('====================================');
+        console.log('Berhasil hapus payment yang sudah expired');
       } else {
-        console.log('No expired payments found to delete.');
+        console.log('Tidak ada payment yang sudah expired');
       }
     } catch (error) {
       console.error(
@@ -58,19 +56,31 @@ export class PaymentService {
     }
   }
 
-  async findPayment(invoice_id: string, bank_code: string): Promise<any> {
+  async findPayment(
+    invoice_id: string,
+    bank_code: string,
+    external_id: string,
+  ): Promise<any> {
     try {
       const payment = await this.paymentRepository.findOne({
-        where: { invoice_id, bank_code },
+        where: { invoice_id, bank_code, external_id },
       });
 
       if (!payment) {
-        return null;
+        return { message: 'data payment tidak ditemukan atau sudah expired' };
       }
 
-      const { amount, status, expiration_date } = payment;
+      const { amount, status, expiration_date, account_number } = payment;
 
-      return { amount, bank_code, status, invoice_id, expiration_date };
+      return {
+        amount,
+        bank_code,
+        status,
+        invoice_id,
+        expiration_date,
+        external_id,
+        account_number,
+      };
     } catch (error) {
       throw error;
     }
@@ -109,7 +119,7 @@ export class PaymentService {
     try {
       const apiKey = this.configService.get<string>('XENDIT_API_KEY');
       const expiresAt = new Date();
-      expiresAt.setHours(expiresAt.getHours() + 1);
+      expiresAt.setMinutes(expiresAt.getMinutes() + 30);
 
       const response = await this.vaService.createCallbackVirtualAccount(
         {
@@ -164,7 +174,7 @@ export class PaymentService {
     const reference_id = this.generateRandomWord();
 
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 1);
+    expiresAt.setMinutes(expiresAt.getMinutes() + 30);
     const existingPayment = await this.paymentRepository.findOne({
       where: {
         invoice_id: qrDetails.invoice_id,
