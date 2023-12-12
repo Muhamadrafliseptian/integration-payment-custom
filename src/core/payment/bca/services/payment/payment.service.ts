@@ -1,20 +1,20 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentParams } from 'src/utils/type';
-import { In, LessThanOrEqual, Raw, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
-import { PageDto } from 'src/core/dtos/pagination/page.dto';
-import { PageMetaDto } from 'src/core/dtos/pagination/page-meta.dto';
-import { XenditEntity } from 'src/typeorm/entities/Xendit';
+// import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
+// import { PageDto } from 'src/core/dtos/pagination/page.dto';
+// import { PageMetaDto } from 'src/core/dtos/pagination/page-meta.dto';
+import { XenditEntity } from '../../../../../typeorm/entities/Xendit';
 import {
   VirtualAccountService,
   AvailableBankServices,
   QrCodeService,
   EWalletService,
-} from 'src/core/services_modules/va-services';
+} from '../../../../services_modules/va-services';
 import axios, { AxiosError } from 'axios';
-import { AppGateway } from 'src/core/services_modules/app.gateway';
+import { AppGateway } from '../../../../services_modules/app.gateway';
 
 @Injectable()
 export class PaymentService {
@@ -28,6 +28,35 @@ export class PaymentService {
     private readonly ewalletService: EWalletService,
     private readonly appGateway: AppGateway,
   ) {}
+
+  async deleteExpiredPayments() {
+    try {
+      const expiredPayments = await this.paymentRepository.find({
+        where: {
+          status_pembayaran: 'ACTIVE',
+        },
+      });
+      console.log('====================================');
+      console.log('Expired Payments Before Deletion:');
+      console.log(expiredPayments);
+      console.log('====================================');
+
+      if (expiredPayments.length > 0) {
+        await this.paymentRepository.remove(expiredPayments);
+        console.log('====================================');
+        console.log('Expired Payments After Deletion:');
+        console.log(expiredPayments);
+        console.log('====================================');
+      } else {
+        console.log('No expired payments found to delete.');
+      }
+    } catch (error) {
+      console.error(
+        'Error in deleting expired payments:',
+        error.message || error,
+      );
+    }
+  }
 
   async findPayment(invoice_id: string, bank_code: string): Promise<any> {
     try {
@@ -47,24 +76,24 @@ export class PaymentService {
     }
   }
 
-  public async getPayment(
-    pageOptionsDto: PageOptionsDto,
-  ): Promise<PageDto<XenditEntity>> {
-    const queryBuilder =
-      this.paymentRepository.createQueryBuilder('payment_xendits');
+  // public async getPayment(
+  //   pageOptionsDto: PageOptionsDto,
+  // ): Promise<PageDto<XenditEntity>> {
+  //   const queryBuilder =
+  //     this.paymentRepository.createQueryBuilder('payment_xendits');
 
-    queryBuilder
-      .orderBy('payment_xendits.created_at', pageOptionsDto.order)
-      .skip(pageOptionsDto.skip)
-      .take(pageOptionsDto.take);
+  //   queryBuilder
+  //     .orderBy('payment_xendits.created_at', pageOptionsDto.order)
+  //     .skip(pageOptionsDto.skip)
+  //     .take(pageOptionsDto.take);
 
-    const itemCount = await queryBuilder.getCount();
-    const { entities } = await queryBuilder.getRawAndEntities();
+  //   const itemCount = await queryBuilder.getCount();
+  //   const { entities } = await queryBuilder.getRawAndEntities();
 
-    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
+  //   const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
 
-    return new PageDto(entities, pageMetaDto);
-  }
+  //   return new PageDto(entities, pageMetaDto);
+  // }
 
   public async getAvailableBank() {
     try {
@@ -75,31 +104,13 @@ export class PaymentService {
       console.log(err);
     }
   }
-  async createPayment(paymentDetails: PaymentParams): Promise<any> {
-    const apiKey = this.configService.get<string>('XENDIT_API_KEY');
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 1);
 
-    const existingPayment = await this.paymentRepository.findOne({
-      where: {
-        invoice_id: paymentDetails.invoice_id,
-        bank_code: paymentDetails.bank_code,
-        expiration_date: LessThanOrEqual(expiresAt),
-        status: 'PENDING',
-      },
-    });
-
-    if (existingPayment) {
-      console.log('error gabisa bikin va');
-      return {
-        success: false,
-        error: {
-          message: 'masih ada yang belum expired VA nya',
-        },
-      };
-    }
-
+  async createPayment(paymentDetails: TestPaymentXendit): Promise<any> {
     try {
+      const apiKey = this.configService.get<string>('XENDIT_API_KEY');
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 1);
+
       const response = await this.vaService.createCallbackVirtualAccount(
         {
           external_id: paymentDetails.external_id,
@@ -108,7 +119,7 @@ export class PaymentService {
           is_single_use: true,
           bank_code: paymentDetails.bank_code,
           name: 'Hamdan Tr',
-          expiration_date: expiresAt.toISOString(),
+          expiration_date: expiresAt,
         },
         apiKey,
       );
@@ -125,10 +136,12 @@ export class PaymentService {
           status_pembayaran: 'ACTIVE',
         }),
       );
+      const extendedResponse = {
+        ...response.data,
+        invoice_id: 'INV-TNOS123',
+      };
 
-      this.appGateway.sendStatusToClient(response.data.status);
-
-      return xenditPayment;
+      return extendedResponse;
     } catch (error) {
       if (error.response && error.response.data) {
         const { error_code, message } = error.response.data;
@@ -141,7 +154,7 @@ export class PaymentService {
         };
       }
 
-      throw { success: false, error: { message: 'An error occurred' } };
+      throw { success: false, error: { message: 'Terjadi kesalahan' } };
     }
   }
 
@@ -157,7 +170,6 @@ export class PaymentService {
         invoice_id: qrDetails.invoice_id,
         bank_code: qrDetails.bank_code,
         status: 'ACTIVE',
-        expiration_date: LessThanOrEqual(expiresAt),
       },
     });
 

@@ -2,7 +2,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { LayananModule } from './core/layanan/layanan.module';
 import { RolesModule } from './core/roles/roles.module';
@@ -50,6 +49,6 @@ import { ChannelEwalletModule } from './core/payment/channel_ewallet/channel_ewa
     ConfigModule,
     ChannelEwalletModule,
   ],
-  providers: [AppService],
+  providers: [],
 })
 export class AppModule {}

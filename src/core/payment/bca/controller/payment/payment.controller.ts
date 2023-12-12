@@ -6,13 +6,13 @@ import {
   HttpStatus,
   Param,
   Post,
-  Query,
 } from '@nestjs/common';
 import { PaymentService } from '../../services/payment/payment.service';
-import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
-import { PageDto } from 'src/core/dtos/pagination/page.dto';
+// import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
+// import { PageDto } from 'src/core/dtos/pagination/page.dto';
 import { CreatePayment } from 'src/core/dtos/payment/create-payment.dto';
-import { XenditEntity } from 'src/typeorm/entities/Xendit';
+// import { XenditEntity } from 'src/typeorm/entities/Xendit';
+import { XenditEntity } from '../../../../../typeorm/entities/Xendit';
 import { AppGateway } from 'src/core/services_modules/app.gateway';
 
 @Controller('payment')
@@ -22,13 +22,13 @@ export class PaymentController {
     private readonly appGateway: AppGateway,
   ) {}
 
-  @Get()
-  @HttpCode(HttpStatus.OK)
-  async getPayment(
-    @Query() pageOptionsDto: PageOptionsDto,
-  ): Promise<PageDto<XenditEntity>> {
-    return this.paymentService.getPayment(pageOptionsDto);
-  }
+  // @Get()
+  // @HttpCode(HttpStatus.OK)
+  // async getPayment(
+  //   @Query() pageOptionsDto: PageOptionsDto,
+  // ): Promise<PageDto<XenditEntity>> {
+  //   return this.paymentService.getPayment(pageOptionsDto);
+  // }
 
   @Get('bank')
   @HttpCode(HttpStatus.OK)

@@ -11,6 +11,7 @@ import {
   VirtualAccountService,
 } from 'src/core/services_modules/va-services';
 import { AppGateway } from 'src/core/services_modules/app.gateway';
+import { PaymentSchedulerService } from 'src/core/services_modules/scheduler.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([XenditEntity]), ConfigModule.forRoot()],
@@ -22,6 +23,7 @@ import { AppGateway } from 'src/core/services_modules/app.gateway';
     EWalletService,
     QrCodeService,
     AppGateway,
+    PaymentSchedulerService,
   ],
 })
 export class BcaModule {}
