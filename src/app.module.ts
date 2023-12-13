@@ -14,6 +14,8 @@ import { TestPayments } from './typeorm/entities/TestingPayment';
 import { ChannelEwalletEntity } from './typeorm/entities/ChannelEwallet';
 import { ChannelEwalletModule } from './core/payment/channel_ewallet/channel_ewallet.module';
 import { SchedulerModule } from './core/module/scheduler/scheduler.module';
+import { QrCodeModule } from './core/payment/qr_code/qr_code.module';
+import { ChannelQrCode } from './typeorm/entities/ChannelQr';
 
 @Module({
   imports: [
@@ -37,6 +39,7 @@ import { SchedulerModule } from './core/module/scheduler/scheduler.module';
           XenditEntity,
           TestPayments,
           ChannelEwalletEntity,
+          ChannelQrCode,
         ],
         synchronize: true,
       }),
@@ -49,6 +52,7 @@ import { SchedulerModule } from './core/module/scheduler/scheduler.module';
     ConfigModule,
     ChannelEwalletModule,
     SchedulerModule,
+    QrCodeModule,
   ],
   providers: [],
 })

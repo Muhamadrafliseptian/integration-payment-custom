@@ -175,26 +175,6 @@ export class PaymentService {
 
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 30);
-    const existingPayment = await this.paymentRepository.findOne({
-      where: {
-        invoice_id: qrDetails.invoice_id,
-        bank_code: qrDetails.bank_code,
-        status: 'ACTIVE',
-      },
-    });
-
-    if (existingPayment) {
-      console.log(
-        'Cannot create a new virtual account. There is an existing PENDING payment for the same invoice_id and bank_code with an unexpired expiration_date.',
-      );
-      return {
-        success: false,
-        error: {
-          message:
-            'Cannot create a new virtual account. There is an existing PENDING payment for the same invoice_id and bank_code with an unexpired expiration_date.',
-        },
-      };
-    }
     try {
       const response = await this.qaService.createQrService(
         {
@@ -212,7 +192,7 @@ export class PaymentService {
         this.paymentRepository.create({
           reference_id: response.data.reference_id,
           currency: response.data.currency,
-          external_id: response.data.external_id,
+          external_id: qrDetails.external_id,
           invoice_id: 'INV-TNOS123',
           bank_code: response.data.channel_code,
           amount: response.data.amount,
@@ -220,7 +200,7 @@ export class PaymentService {
           expiration_date: response.data.expires_at,
         }),
       );
-      return qrPayment;
+      return response.data;
     } catch (error) {
       if (error.response && error.response.data) {
         const { error_code, message } = error.response.data;
