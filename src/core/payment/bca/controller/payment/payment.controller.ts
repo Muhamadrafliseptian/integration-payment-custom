@@ -36,16 +36,16 @@ export class PaymentController {
     return this.paymentService.getAvailableBank();
   }
 
-  @Get(':invoice_id/:bank_code/:external_id/get')
+  @Get(':invoice_id/get')
   async findPayment(
     @Param('invoice_id') invoice_id: string,
-    @Param('bank_code') bank_code: string,
-    @Param('external_id') external_id: string,
+    // @Param('bank_code') bank_code: string,
+    // @Param('external_id') external_id: string,
   ): Promise<XenditEntity> {
     const paymentDetails = await this.paymentService.findPayment(
       invoice_id,
-      bank_code,
-      external_id,
+      // bank_code,
+      // external_id,
     );
     if (!paymentDetails) {
       console.log('Unable to find payment');

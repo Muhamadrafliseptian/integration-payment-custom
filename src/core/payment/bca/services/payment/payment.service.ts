@@ -55,36 +55,73 @@ export class PaymentService {
       );
     }
   }
-
-  async findPayment(
-    invoice_id: string,
-    bank_code: string,
-    external_id: string,
-  ): Promise<any> {
+  async findPayment(invoice_id: string): Promise<any> {
     try {
-      const payment = await this.paymentRepository.findOne({
-        where: { invoice_id, bank_code, external_id },
+      const payments = await this.paymentRepository.find({
+        where: { invoice_id },
       });
 
-      if (!payment) {
-        return { message: 'data payment tidak ditemukan atau sudah expired' };
+      if (!payments || payments.length === 0) {
+        return [{ message: 'No payments found for the specified invoice_id' }];
       }
 
-      const { amount, status, expiration_date, account_number } = payment;
+      // Map the payments to the required format
+      const formattedPayments = payments.map((payment) => {
+        const {
+          amount,
+          status,
+          expiration_date,
+          account_number,
+          bank_code,
+          external_id,
+        } = payment;
 
-      return {
-        amount,
-        bank_code,
-        status,
-        invoice_id,
-        expiration_date,
-        external_id,
-        account_number,
-      };
+        return {
+          amount,
+          bank_code,
+          status,
+          invoice_id,
+          expiration_date,
+          external_id,
+          account_number,
+        };
+      });
+
+      return { data: formattedPayments };
     } catch (error) {
       throw error;
     }
   }
+
+  // async findPayment(
+  //   invoice_id: string,
+  //   bank_code: string,
+  //   external_id: string,
+  // ): Promise<any> {
+  //   try {
+  //     const payment = await this.paymentRepository.findOne({
+  //       where: { invoice_id },
+  //     });
+
+  //     if (!payment) {
+  //       return { message: 'data payment tidak ditemukan atau sudah expired' };
+  //     }
+
+  //     const { amount, status, expiration_date, account_number, bank_code, external_id } = payment;
+
+  //     return {
+  //       amount,
+  //       bank_code,
+  //       status,
+  //       invoice_id,
+  //       expiration_date,
+  //       external_id,
+  //       account_number,
+  //     };
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
 
   // public async getPayment(
   //   pageOptionsDto: PageOptionsDto,
@@ -245,8 +282,13 @@ export class PaymentService {
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 30);
     const expiresAtString = expiresAt.toISOString();
-    const { external_id, currency, channel_code, mobile_number } =
-      ewalletDetails;
+    const {
+      external_id,
+      currency,
+      channel_code,
+      mobile_number,
+      expiration_date,
+    } = ewalletDetails;
     const referenceId = `tnos-${Date.now()}`;
 
     try {
@@ -281,9 +323,9 @@ export class PaymentService {
       );
       const extendedResponse = {
         ...response.data,
-        invoice_id: ewalletDetails.invoice_id,
+        invoice_id: ewalletPayment.invoice_id,
         external_id: ewalletDetails.external_id,
-        expiration_date: ewalletDetails.expiration_date,
+        expiration_date: ewalletPayment.expiration_date,
       };
 
       return extendedResponse;
