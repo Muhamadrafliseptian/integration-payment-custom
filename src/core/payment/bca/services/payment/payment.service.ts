@@ -134,6 +134,8 @@ export class PaymentService {
         apiKey,
       );
 
+      console.log(response);
+
       const xenditPayment = await this.paymentRepository.save(
         this.paymentRepository.create({
           external_id: paymentDetails.external_id,
@@ -175,6 +177,8 @@ export class PaymentService {
 
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+
+    const { channel_code } = qrDetails;
     try {
       const response = await this.qaService.createQrService(
         {
@@ -182,7 +186,7 @@ export class PaymentService {
           type: 'DYNAMIC',
           currency: qrDetails.currency,
           amount: 10000,
-          channel_code: 'ID_DANA',
+          channel_code,
           expires_at: expiresAt,
         },
         apiKey,
@@ -198,9 +202,17 @@ export class PaymentService {
           amount: response.data.amount,
           status: response.data.status,
           expiration_date: response.data.expires_at,
+          status_pembayaran: 'ACTIVE',
         }),
       );
-      return response.data;
+
+      const extendedResponse = {
+        ...response.data,
+        invoice_id: 'INV-TNOS123',
+        external_id: qrDetails.external_id,
+      };
+
+      return extendedResponse;
     } catch (error) {
       if (error.response && error.response.data) {
         const { error_code, message } = error.response.data;

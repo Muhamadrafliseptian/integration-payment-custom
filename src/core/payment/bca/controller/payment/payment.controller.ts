@@ -106,6 +106,8 @@ export class PaymentController {
 
       const { external_id, amount } = xenditCallbackData;
 
+      console.log(xenditCallbackData);
+
       const updatedPayment =
         await this.paymentService.updatePaymentStatusByExternalId(
           external_id,
