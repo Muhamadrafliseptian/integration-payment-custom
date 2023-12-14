@@ -145,6 +145,7 @@ export class PaymentService {
           bank_code: response.data.bank_code,
           account_number: response.data.account_number,
           expiration_date: response.data.expiration_date,
+          payment_method: 'VIRTUAL ACCOUNT',
           status_pembayaran: 'ACTIVE',
         }),
       );
@@ -201,6 +202,7 @@ export class PaymentService {
           bank_code: response.data.channel_code,
           amount: response.data.amount,
           status: response.data.status,
+          payment_method: 'QRIS',
           expiration_date: response.data.expires_at,
           status_pembayaran: 'ACTIVE',
         }),
@@ -240,7 +242,9 @@ export class PaymentService {
 
   async createPaymentEwallet(ewalletDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
-
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+    const expiresAtString = expiresAt.toISOString();
     const { external_id, currency, channel_code, mobile_number } =
       ewalletDetails;
     const referenceId = `tnos-${Date.now()}`;
@@ -255,7 +259,8 @@ export class PaymentService {
           channel_code,
           channel_properties: {
             mobile_number,
-            success_redirect_url: 'http://127.0.0.1:3000/',
+            success_redirect_url: 'http://127.0.0.1:3000/redirect_payment',
+            failure_redirect_url: 'http://127.0.0.1:3000/redirect_payment',
           },
         },
         apiKey,
@@ -265,13 +270,23 @@ export class PaymentService {
           external_id,
           currency,
           invoice_id: 'INV-TNOS123',
+          payment_method: 'E-WALLET',
           reference_id: response.data.reference_id,
           amount: response.data.charge_amount,
           bank_code: response.data.channel_code,
+          status_pembayaran: 'ACTIVE',
           status: response.data.status,
+          expiration_date: expiresAtString,
         }),
       );
-      return response.data;
+      const extendedResponse = {
+        ...response.data,
+        invoice_id: ewalletDetails.invoice_id,
+        external_id: ewalletDetails.external_id,
+        expiration_date: ewalletDetails.expiration_date,
+      };
+
+      return extendedResponse;
     } catch (err) {
       console.log('error');
       console.log(err);
@@ -301,6 +316,7 @@ export class PaymentService {
     }
 
     payment.status = newStatus;
+    payment.status_pembayaran = 'SUCCESS';
 
     const updatedPayment = await this.paymentRepository.save(payment);
 
@@ -396,6 +412,7 @@ export class PaymentService {
     }
 
     payment.status = newStatus;
+    payment.status_pembayaran = 'SUCCESS';
 
     const updatedPayment = await this.paymentRepository.save(payment);
 
