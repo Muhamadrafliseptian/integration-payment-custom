@@ -55,7 +55,41 @@ export class PaymentService {
       );
     }
   }
-  async findPayment(invoice_id: string): Promise<any> {
+
+  async findPayment(
+    invoice_id: string,
+    bank_code: string,
+    external_id: string,
+  ): Promise<any> {
+    try {
+      const payment = await this.paymentRepository.findOne({
+        where: { invoice_id, bank_code, external_id },
+      });
+
+      if (!payment) {
+        return {
+          message:
+            'Maaf bank yang kamu pilih sedang tidak tersedia atau sudah expired',
+        };
+      }
+
+      const { amount, status, expiration_date, account_number } = payment;
+
+      return {
+        amount,
+        bank_code,
+        status,
+        invoice_id,
+        expiration_date,
+        external_id,
+        account_number,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async findPaymentIdAll(invoice_id: string): Promise<any> {
     try {
       const payments = await this.paymentRepository.find({
         where: { invoice_id },
@@ -162,16 +196,15 @@ export class PaymentService {
         {
           external_id: paymentDetails.external_id,
           currency: paymentDetails.currency,
-          is_closed: false,
+          is_closed: true,
           is_single_use: true,
+          expected_amount: '20000',
           bank_code: paymentDetails.bank_code,
           name: 'Hamdan Tr',
           expiration_date: expiresAt,
         },
         apiKey,
       );
-
-      console.log(response);
 
       const xenditPayment = await this.paymentRepository.save(
         this.paymentRepository.create({

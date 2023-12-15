@@ -20,7 +20,7 @@ export class PaymentController {
   constructor(
     private paymentService: PaymentService,
     private readonly appGateway: AppGateway,
-  ) {}
+  ) { }
 
   // @Get()
   // @HttpCode(HttpStatus.OK)
@@ -36,13 +36,31 @@ export class PaymentController {
     return this.paymentService.getAvailableBank();
   }
 
-  @Get(':invoice_id/get')
+  @Get(':invoice_id/:bank_code/:external_id/get')
   async findPayment(
+    @Param('invoice_id') invoice_id: string,
+    @Param('bank_code') bank_code: string,
+    @Param('external_id') external_id: string,
+  ): Promise<XenditEntity> {
+    const paymentDetails = await this.paymentService.findPayment(
+      invoice_id,
+      bank_code,
+      external_id,
+    );
+    if (!paymentDetails) {
+      console.log('Unable to find payment');
+    } else {
+      return paymentDetails;
+    }
+  }
+
+  @Get(':invoice_id/get')
+  async findPaymentIdAll(
     @Param('invoice_id') invoice_id: string,
     // @Param('bank_code') bank_code: string,
     // @Param('external_id') external_id: string,
   ): Promise<XenditEntity> {
-    const paymentDetails = await this.paymentService.findPayment(
+    const paymentDetails = await this.paymentService.findPaymentIdAll(
       invoice_id,
       // bank_code,
       // external_id,
@@ -114,13 +132,23 @@ export class PaymentController {
           amount,
         );
 
+      const messageSuccess =
+        'berhasil melakukan pembayaran atas id dengan bank';
+
       if (
         updatedPayment &&
         updatedPayment.status === 'PAID' &&
         updatedPayment.status_pembayaran === 'SUCCESS'
       ) {
-        this.appGateway.sendStatusToClient(updatedPayment.status);
-        return xenditCallbackData;
+        // this.appGateway.sendStatusToClient(updatedPayment.status);
+
+        const extendedResponse = {
+          ...xenditCallbackData,
+          messageSuccess,
+        };
+        console.log(extendedResponse);
+
+        return extendedResponse;
       } else {
         throw new Error('Failed to update payment status');
       }
