@@ -48,11 +48,11 @@ export type PaymentParams = {
   status_pembayaran: string;
 };
 
-export type TestPaymentsParams = {
-  external_id: string;
-  user_id: string;
-  invoice_url: string;
-  status: string;
-  currency: string;
-  amount: number;
+export type LinkedAccountParams = {
+  account_mobile_number: string;
+  card_expiry: string;
+  card_last_four: string;
+  channel_code: string;
+  account_email: string;
+  customer_id: string;
 };

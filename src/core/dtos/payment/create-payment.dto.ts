@@ -34,3 +34,12 @@ export class CreatePayment {
     this.generateRandomExternalId();
   }
 }
+
+export class CreateLink {
+  account_mobile_number: string;
+  card_expiry: string;
+  card_last_four: string;
+  channel_code: string;
+  account_email: string;
+  customer_id: string;
+}

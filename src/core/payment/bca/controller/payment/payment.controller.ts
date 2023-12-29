@@ -10,7 +10,10 @@ import {
 import { PaymentService } from '../../services/payment/payment.service';
 // import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
 // import { PageDto } from 'src/core/dtos/pagination/page.dto';
-import { CreatePayment } from 'src/core/dtos/payment/create-payment.dto';
+import {
+  CreatePayment,
+  CreateLink,
+} from 'src/core/dtos/payment/create-payment.dto';
 // import { XenditEntity } from 'src/typeorm/entities/Xendit';
 import { XenditEntity } from '../../../../../typeorm/entities/Xendit';
 import { AppGateway } from 'src/core/services_modules/app.gateway';
@@ -20,7 +23,7 @@ export class PaymentController {
   constructor(
     private paymentService: PaymentService,
     private readonly appGateway: AppGateway,
-  ) { }
+  ) {}
 
   // @Get()
   // @HttpCode(HttpStatus.OK)
@@ -85,6 +88,11 @@ export class PaymentController {
   @Post('ewallet')
   createPaymentEwallet(@Body() createPaymentDto: CreatePayment) {
     return this.paymentService.createPaymentEwallet(createPaymentDto);
+  }
+
+  @Post('initialize_linked/directdebit')
+  createLinked(@Body() createPaymentDto: CreateLink) {
+    return this.paymentService.initializeLinkedDirectDebit(createPaymentDto);
   }
 
   @Post('qrcode/callback')
@@ -156,6 +164,15 @@ export class PaymentController {
       console.error('Error updating payment status:', er);
       throw new Error('Internal Server Errorrr');
     }
+  }
+
+  @Post('linked_account/directdebit')
+  @HttpCode(HttpStatus.OK)
+  async getDirectDebitCallback(@Body() directDebitData: any): Promise<any> {
+    console.log('====================================');
+    console.log(directDebitData);
+    console.log('====================================');
+    // return directDebitData;
   }
 
   @Post('ewallet/callback')

@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PaymentParams } from 'src/utils/type';
+import { PaymentParams, LinkedAccountParams } from 'src/utils/type';
 import { In, LessThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 // import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
@@ -12,6 +12,7 @@ import {
   AvailableBankServices,
   QrCodeService,
   EWalletService,
+  LinkedDebitService,
 } from '../../../../services_modules/va-services';
 import axios, { AxiosError } from 'axios';
 import { AppGateway } from '../../../../services_modules/app.gateway';
@@ -26,12 +27,9 @@ export class PaymentService {
     private readonly listBankService: AvailableBankServices,
     private readonly qaService: QrCodeService,
     private readonly ewalletService: EWalletService,
+    private readonly linkedDebitService: LinkedDebitService,
     private readonly appGateway: AppGateway,
   ) {}
-
-  testCron() {
-    console.log('sukses');
-  }
 
   async deleteExpiredPayments() {
     try {
@@ -299,6 +297,42 @@ export class PaymentService {
     }
   }
 
+  async initializeLinkedDirectDebit(
+    linkDetails: LinkedAccountParams,
+  ): Promise<any> {
+    const apiKey = this.configService.get<string>('XENDIT_API_KEY');
+
+    const {
+      customer_id,
+      channel_code,
+      account_mobile_number,
+      card_last_four,
+      card_expiry,
+      account_email,
+    } = linkDetails;
+    try {
+      const response = await this.linkedDebitService.createLinkedDebitService(
+        {
+          customer_id,
+          channel_code,
+          properties: {
+            card_last_four,
+            account_mobile_number,
+            card_expiry,
+            account_email,
+          },
+        },
+        apiKey,
+      );
+      return response.data;
+    } catch (err) {
+      throw new HttpException(
+        'Failed to update payment',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   private generateRandomWord(length = 10): string {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
     let result = '';
@@ -313,7 +347,7 @@ export class PaymentService {
   async createPaymentEwallet(ewalletDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
     const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+    expiresAt.setMinutes(expiresAt.getMinutes() + 1);
     const expiresAtString = expiresAt.toISOString();
     const {
       external_id,

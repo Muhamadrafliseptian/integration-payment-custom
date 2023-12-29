@@ -46,3 +46,19 @@ export class EWalletService {
     });
   }
 }
+
+@Injectable()
+export class LinkedDebitService {
+  async createLinkedDebitService(
+    data: any,
+    apiKey: string,
+  ): Promise<AxiosResponse> {
+    return axios.post(
+      'https://api.xendit.co/linked_account_tokens/auth',
+      data,
+      {
+        auth: { username: apiKey, password: '' },
+      },
+    );
+  }
+}
