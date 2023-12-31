@@ -23,7 +23,7 @@ export class PaymentController {
   constructor(
     private paymentService: PaymentService,
     private readonly appGateway: AppGateway,
-  ) {}
+  ) { }
 
   // @Get()
   // @HttpCode(HttpStatus.OK)
@@ -169,10 +169,19 @@ export class PaymentController {
   @Post('linked_account/directdebit')
   @HttpCode(HttpStatus.OK)
   async getDirectDebitCallback(@Body() directDebitData: any): Promise<any> {
-    console.log('====================================');
-    console.log(directDebitData);
-    console.log('====================================');
-    // return directDebitData;
+    try {
+      const status = directDebitData?.data?.status;
+      const authentication_id = directDebitData?.data?.id;
+      const updateLinkedAccount = await this.paymentService.updateLinkStatus(
+        authentication_id,
+        status,
+      );
+
+      console.log(directDebitData);
+      return {
+        data: directDebitData,
+      };
+    } catch (err) {}
   }
 
   @Post('ewallet/callback')
@@ -185,7 +194,6 @@ export class PaymentController {
         reference_id,
         status,
       );
-      this.appGateway.sendStatusToClient(updatedPayment.status);
       return {
         success: true,
         data: ewalletData,

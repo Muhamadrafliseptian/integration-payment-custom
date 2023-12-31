@@ -320,17 +320,47 @@ export class PaymentService {
             account_mobile_number,
             card_expiry,
             account_email,
-          },
+          }
         },
         apiKey,
       );
-      return response.data;
-    } catch (err) {
-      throw new HttpException(
-        'Failed to update payment',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+      const initLink = await this.paymentRepository.save(
+        this.paymentRepository.create({
+          authentication_id: response.data.id,
+          customer: response.data.customer_id,
+          bank_code: response.data.channel_code,
+          status: response.data.status,
+        }),
       );
+      const extendedResponse = {
+        ...response.data,
+      };
+
+      return extendedResponse;
+    } catch (err) {
+      console.log(err);
     }
+  }
+
+  async updateLinkStatus(
+    newAuthenticationId: string,
+    newStatus: string,
+  ): Promise<any> {
+    try {
+      const payment = await this.paymentRepository.findOne({
+        where: { authentication_id: newAuthenticationId },
+      });
+
+      if (!payment) {
+        console.log(payment);
+        throw new HttpException(
+          'authentication id not found',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      payment.status = newStatus;
+    } catch (err) {}
   }
 
   private generateRandomWord(length = 10): string {
