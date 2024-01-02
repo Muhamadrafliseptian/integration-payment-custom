@@ -13,6 +13,7 @@ import {
   QrCodeService,
   EWalletService,
   LinkedDebitService,
+  LinkOtpDebitService,
 } from '../../../../services_modules/va-services';
 import axios, { AxiosError } from 'axios';
 import { AppGateway } from '../../../../services_modules/app.gateway';
@@ -28,6 +29,7 @@ export class PaymentService {
     private readonly qaService: QrCodeService,
     private readonly ewalletService: EWalletService,
     private readonly linkedDebitService: LinkedDebitService,
+    private readonly linkedOtpService: LinkOtpDebitService,
     private readonly appGateway: AppGateway,
   ) {}
 
@@ -316,11 +318,17 @@ export class PaymentService {
           customer_id,
           channel_code,
           properties: {
-            card_last_four,
             account_mobile_number,
+            success_redirect_url: 'https://redirect.com',
+            card_last_four,
             card_expiry,
             account_email,
-          }
+          },
+          device: {
+            id: 'WEB',
+            ip_address: '192.168.1.46',
+            user_agent: 'Mozilla/5.0',
+          },
         },
         apiKey,
       );
@@ -360,6 +368,33 @@ export class PaymentService {
       }
 
       payment.status = newStatus;
+    } catch (err) {}
+  }
+
+  async updateDebitPayment(
+    newAuthenticationId: string,
+    newStatus: string,
+  ): Promise<any> {
+    try {
+      const payment = await this.paymentRepository.findOne({
+        where: { authentication_id: newAuthenticationId },
+      });
+
+      console.log(payment);
+
+      if (!payment) {
+        console.log(payment);
+        throw new HttpException(
+          'authentication id not found',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      payment.status = newStatus;
+
+      const updatedPayment = await this.paymentRepository.save(payment);
+
+      return updatedPayment;
     } catch (err) {}
   }
 

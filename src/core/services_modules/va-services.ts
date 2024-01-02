@@ -62,3 +62,16 @@ export class LinkedDebitService {
     );
   }
 }
+
+@Injectable()
+export class LinkOtpDebitService {
+  async sendOtpRequest(data: any, apiKey: string): Promise<AxiosResponse> {
+    return axios.post(
+      'https://api.xendit.co/linked_account_tokens/:id/validate_otp',
+      data,
+      {
+        auth: { username: apiKey, password: '' },
+      },
+    );
+  }
+}

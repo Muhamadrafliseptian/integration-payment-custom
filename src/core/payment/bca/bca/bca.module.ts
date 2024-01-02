@@ -10,6 +10,7 @@ import {
   QrCodeService,
   VirtualAccountService,
   LinkedDebitService,
+  LinkOtpDebitService
 } from 'src/core/services_modules/va-services';
 import { AppGateway } from 'src/core/services_modules/app.gateway';
 
@@ -23,6 +24,7 @@ import { AppGateway } from 'src/core/services_modules/app.gateway';
     EWalletService,
     QrCodeService,
     LinkedDebitService,
+    LinkOtpDebitService,
     AppGateway,
   ],
 })

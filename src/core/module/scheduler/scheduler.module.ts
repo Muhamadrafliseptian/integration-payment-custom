@@ -8,6 +8,7 @@ import {
   QrCodeService,
   VirtualAccountService,
   LinkedDebitService,
+  LinkOtpDebitService,
 } from 'src/core/services_modules/va-services';
 import { AppGateway } from 'src/core/services_modules/app.gateway';
 import { PaymentService } from '../../payment/bca/services/payment/payment.service';
@@ -27,6 +28,7 @@ import { PaymentSchedulerService } from '../../services_modules/scheduler.servic
     EWalletService,
     QrCodeService,
     LinkedDebitService,
+    LinkOtpDebitService,
     AppGateway,
     PaymentSchedulerService,
   ],
