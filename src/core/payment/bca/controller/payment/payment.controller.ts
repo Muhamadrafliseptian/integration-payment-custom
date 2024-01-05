@@ -77,17 +77,17 @@ export class PaymentController {
 
   @Post('virtualaccount')
   createPayment(@Body() createPaymentDto: CreatePayment) {
-    return this.paymentService.createPayment(createPaymentDto);
+    return this.paymentService.createVirtualAccount(createPaymentDto);
   }
 
   @Post('qrcode')
   createPaymentQr(@Body() createPaymentDto: CreatePayment) {
-    return this.paymentService.createPaymentQr(createPaymentDto);
+    return this.paymentService.createQrisCode(createPaymentDto);
   }
 
   @Post('ewallet')
   createPaymentEwallet(@Body() createPaymentDto: CreatePayment) {
-    return this.paymentService.createPaymentEwallet(createPaymentDto);
+    return this.paymentService.createtEwallet(createPaymentDto);
   }
 
   @Post('initialize_linked/directdebit')

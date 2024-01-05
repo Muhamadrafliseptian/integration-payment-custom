@@ -33,29 +33,6 @@ export class PaymentService {
     private readonly appGateway: AppGateway,
   ) {}
 
-  async deleteExpiredPayments() {
-    try {
-      const currentDate = new Date();
-      const expiredPayments = await this.paymentRepository.find({
-        where: {
-          status_pembayaran: 'ACTIVE',
-          expiration_date: LessThan(currentDate.toISOString()),
-        },
-      });
-      if (expiredPayments.length > 0) {
-        await this.paymentRepository.remove(expiredPayments);
-        console.log('Berhasil hapus payment yang sudah expired');
-      } else {
-        console.log('Tidak ada payment yang sudah expired');
-      }
-    } catch (error) {
-      console.error(
-        'Error in deleting expired payments:',
-        error.message || error,
-      );
-    }
-  }
-
   async findPayment(
     invoice_id: string,
     bank_code: string,
@@ -127,55 +104,6 @@ export class PaymentService {
     }
   }
 
-  // async findPayment(
-  //   invoice_id: string,
-  //   bank_code: string,
-  //   external_id: string,
-  // ): Promise<any> {
-  //   try {
-  //     const payment = await this.paymentRepository.findOne({
-  //       where: { invoice_id },
-  //     });
-
-  //     if (!payment) {
-  //       return { message: 'data payment tidak ditemukan atau sudah expired' };
-  //     }
-
-  //     const { amount, status, expiration_date, account_number, bank_code, external_id } = payment;
-
-  //     return {
-  //       amount,
-  //       bank_code,
-  //       status,
-  //       invoice_id,
-  //       expiration_date,
-  //       external_id,
-  //       account_number,
-  //     };
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
-
-  // public async getPayment(
-  //   pageOptionsDto: PageOptionsDto,
-  // ): Promise<PageDto<XenditEntity>> {
-  //   const queryBuilder =
-  //     this.paymentRepository.createQueryBuilder('payment_xendits');
-
-  //   queryBuilder
-  //     .orderBy('payment_xendits.created_at', pageOptionsDto.order)
-  //     .skip(pageOptionsDto.skip)
-  //     .take(pageOptionsDto.take);
-
-  //   const itemCount = await queryBuilder.getCount();
-  //   const { entities } = await queryBuilder.getRawAndEntities();
-
-  //   const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
-
-  //   return new PageDto(entities, pageMetaDto);
-  // }
-
   public async getAvailableBank() {
     try {
       const apiKey = this.configService.get<string>('XENDIT_API_KEY');
@@ -186,7 +114,7 @@ export class PaymentService {
     }
   }
 
-  async createPayment(paymentDetails: TestPaymentXendit): Promise<any> {
+  async createVirtualAccount(paymentDetails: TestPaymentXendit): Promise<any> {
     try {
       const apiKey = this.configService.get<string>('XENDIT_API_KEY');
       const expiresAt = new Date();
@@ -241,7 +169,7 @@ export class PaymentService {
     }
   }
 
-  async createPaymentQr(qrDetails: PaymentParams): Promise<any> {
+  async createQrisCode(qrDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
 
     const reference_id = this.generateRandomWord();
@@ -265,7 +193,7 @@ export class PaymentService {
 
       const qrPayment = await this.paymentRepository.save(
         this.paymentRepository.create({
-          reference_id: response.data.reference_id,
+          reference_id: response.data.id,
           currency: response.data.currency,
           external_id: qrDetails.external_id,
           invoice_id: 'INV-TNOS123',
@@ -299,53 +227,62 @@ export class PaymentService {
     }
   }
 
-  async initializeLinkedDirectDebit(
-    linkDetails: LinkedAccountParams,
-  ): Promise<any> {
+  async createtEwallet(ewalletDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
-
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+    const expiresAtString = expiresAt.toISOString();
     const {
-      customer_id,
+      external_id,
+      currency,
       channel_code,
-      account_mobile_number,
-      card_last_four,
-      card_expiry,
-      account_email,
-    } = linkDetails;
+      mobile_number,
+      expiration_date,
+      cashtag,
+    } = ewalletDetails;
+    const referenceId = `tnos-${Date.now()}`;
+
     try {
-      const response = await this.linkedDebitService.createLinkedDebitService(
+      const response = await this.ewalletService.createEwalletService(
         {
-          customer_id,
+          currency: 'IDR',
+          reference_id: referenceId,
+          amount: 20000,
+          checkout_method: 'ONE_TIME_PAYMENT',
           channel_code,
-          properties: {
-            account_mobile_number,
-            success_redirect_url: 'https://redirect.com',
-            card_last_four,
-            card_expiry,
-            account_email,
-          },
-          device: {
-            id: 'WEB',
-            ip_address: '192.168.1.46',
-            user_agent: 'Mozilla/5.0',
+          channel_properties: {
+            mobile_number,
+            cashtag: cashtag,
+            success_redirect_url: 'http://127.0.0.1:3000/redirect_payment',
+            failure_redirect_url: 'http://127.0.0.1:3000/redirect_payment',
           },
         },
         apiKey,
       );
-      const initLink = await this.paymentRepository.save(
+      const ewalletPayment = await this.paymentRepository.save(
         this.paymentRepository.create({
-          authentication_id: response.data.id,
-          customer: response.data.customer_id,
+          external_id,
+          currency,
+          invoice_id: 'INV-TNOS123',
+          payment_method: 'E-WALLET',
+          reference_id: response.data.reference_id,
+          amount: response.data.charge_amount,
           bank_code: response.data.channel_code,
+          status_pembayaran: 'ACTIVE',
           status: response.data.status,
+          expiration_date: expiresAtString,
         }),
       );
       const extendedResponse = {
         ...response.data,
+        invoice_id: ewalletPayment.invoice_id,
+        external_id: ewalletDetails.external_id,
+        expiration_date: ewalletPayment.expiration_date,
       };
 
       return extendedResponse;
     } catch (err) {
+      console.log('error');
       console.log(err);
     }
   }
@@ -396,84 +333,6 @@ export class PaymentService {
 
       return updatedPayment;
     } catch (err) {}
-  }
-
-  private generateRandomWord(length = 10): string {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-      result += characters.charAt(
-        Math.floor(Math.random() * characters.length),
-      );
-    }
-    return result;
-  }
-
-  async createPaymentEwallet(ewalletDetails: PaymentParams): Promise<any> {
-    const apiKey = this.configService.get<string>('XENDIT_API_KEY');
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 1);
-    const expiresAtString = expiresAt.toISOString();
-    const {
-      external_id,
-      currency,
-      channel_code,
-      mobile_number,
-      expiration_date,
-    } = ewalletDetails;
-    const referenceId = `tnos-${Date.now()}`;
-
-    try {
-      const response = await this.ewalletService.createEwalletService(
-        {
-          currency: 'IDR',
-          reference_id: referenceId,
-          amount: 20000,
-          checkout_method: 'ONE_TIME_PAYMENT',
-          channel_code,
-          channel_properties: {
-            mobile_number,
-            success_redirect_url: 'http://127.0.0.1:3000/redirect_payment',
-            failure_redirect_url: 'http://127.0.0.1:3000/redirect_payment',
-          },
-        },
-        apiKey,
-      );
-      const ewalletPayment = await this.paymentRepository.save(
-        this.paymentRepository.create({
-          external_id,
-          currency,
-          invoice_id: 'INV-TNOS123',
-          payment_method: 'E-WALLET',
-          reference_id: response.data.reference_id,
-          amount: response.data.charge_amount,
-          bank_code: response.data.channel_code,
-          status_pembayaran: 'ACTIVE',
-          status: response.data.status,
-          expiration_date: expiresAtString,
-        }),
-      );
-      const extendedResponse = {
-        ...response.data,
-        invoice_id: ewalletPayment.invoice_id,
-        external_id: ewalletDetails.external_id,
-        expiration_date: ewalletPayment.expiration_date,
-      };
-
-      return extendedResponse;
-    } catch (err) {
-      console.log('error');
-      console.log(err);
-    }
-  }
-
-  private handleAxiosError(error: any): void {
-    if (axios.isAxiosError(error)) {
-      const axiosError: AxiosError = error;
-      console.error('Axios error:', axiosError);
-    } else {
-      console.error('Non-Axios error:', error.message);
-    }
   }
 
   async updatePaymentQrStatus(
@@ -597,5 +456,99 @@ export class PaymentService {
     );
 
     return updatedPayment;
+  }
+
+  async initializeLinkedDirectDebit(
+    linkDetails: LinkedAccountParams,
+  ): Promise<any> {
+    const apiKey = this.configService.get<string>('XENDIT_API_KEY');
+
+    const {
+      customer_id,
+      channel_code,
+      account_mobile_number,
+      card_last_four,
+      card_expiry,
+      account_email,
+    } = linkDetails;
+    try {
+      const response = await this.linkedDebitService.createLinkedDebitService(
+        {
+          customer_id,
+          channel_code,
+          properties: {
+            account_mobile_number,
+            success_redirect_url: 'https://redirect.com',
+            card_last_four,
+            card_expiry,
+            account_email,
+          },
+          device: {
+            id: 'WEB',
+            ip_address: '192.168.1.46',
+            user_agent: 'Mozilla/5.0',
+          },
+        },
+        apiKey,
+      );
+      const initLink = await this.paymentRepository.save(
+        this.paymentRepository.create({
+          authentication_id: response.data.id,
+          customer: response.data.customer_id,
+          bank_code: response.data.channel_code,
+          status: response.data.status,
+        }),
+      );
+      const extendedResponse = {
+        ...response.data,
+      };
+
+      return extendedResponse;
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  private generateRandomWord(length = 10): string {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(
+        Math.floor(Math.random() * characters.length),
+      );
+    }
+    return result;
+  }
+
+  async deleteExpiredPayments() {
+    try {
+      const currentDate = new Date();
+      const expiredPayments = await this.paymentRepository.find({
+        where: {
+          status_pembayaran: 'ACTIVE',
+          expiration_date: LessThan(currentDate.toISOString()),
+        },
+      });
+      if (expiredPayments.length > 0) {
+        await this.paymentRepository.remove(expiredPayments);
+        console.log('Berhasil hapus payment yang sudah expired');
+      } else {
+        console.log('Tidak ada payment yang sudah expired');
+      }
+    } catch (error) {
+      console.error(
+        'Error in deleting expired payments:',
+        error.message || error,
+      );
+    }
+  }
+
+  private handleAxiosError(error: any): void {
+    if (axios.isAxiosError(error)) {
+      const axiosError: AxiosError = error;
+      console.error('Axios error:', axiosError);
+    } else {
+      console.error('Non-Axios error:', error.message);
+    }
   }
 }

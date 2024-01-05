@@ -46,6 +46,7 @@ export type PaymentParams = {
   channel_code: string;
   mobile_number: string;
   status_pembayaran: string;
+  cashtag: string;
 };
 
 export type LinkedAccountParams = {
