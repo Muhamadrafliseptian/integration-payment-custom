@@ -25,14 +25,6 @@ export class PaymentController {
     private readonly appGateway: AppGateway,
   ) {}
 
-  // @Get()
-  // @HttpCode(HttpStatus.OK)
-  // async getPayment(
-  //   @Query() pageOptionsDto: PageOptionsDto,
-  // ): Promise<PageDto<XenditEntity>> {
-  //   return this.paymentService.getPayment(pageOptionsDto);
-  // }
-
   @Get('bank')
   @HttpCode(HttpStatus.OK)
   async getAvailableBank() {
@@ -166,47 +158,6 @@ export class PaymentController {
     }
   }
 
-  // @Post('linked_account/directdebit')
-  // @HttpCode(HttpStatus.OK)
-  // async getDirectDebitCallback(@Body() directDebitData: any): Promise<any> {
-  //   try {
-  //     const status = directDebitData?.data?.status;
-  //     const authentication_id = directDebitData?.data?.id;
-  //     const updateLinkedAccount = await this.paymentService.updateLinkStatus(
-  //       authentication_id,
-  //       status,
-  //     );
-
-  //     console.log(directDebitData);
-  //     return {
-  //       data: directDebitData,
-  //     };
-  //   } catch (err) {}
-  // }
-
-  @Post('directdebit/payment_succedeed')
-  @HttpCode(HttpStatus.OK)
-  async successPaymentDebit(
-    @Body() directDebitDataSucceded: any,
-  ): Promise<any> {
-    try {
-      const status = directDebitDataSucceded.status;
-      const authentication_id =
-        directDebitDataSucceded.payment_method_id;
-      const updateLinkedAccount = await this.paymentService.updateDebitPayment(
-        authentication_id,
-        status,
-      );
-
-      console.log(authentication_id);
-
-      console.log(directDebitDataSucceded);
-      return {
-        data: directDebitDataSucceded,
-      };
-    } catch (err) {}
-  }
-
   @Post('ewallet/callback')
   @HttpCode(HttpStatus.OK)
   async updateEwalletPayment(@Body() ewalletData: any): Promise<any> {
@@ -229,4 +180,45 @@ export class PaymentController {
       };
     }
   }
+
+  // @Post('linked_account/directdebit')
+  // @HttpCode(HttpStatus.OK)
+  // async getDirectDebitCallback(@Body() directDebitData: any): Promise<any> {
+  //   try {
+  //     const status = directDebitData?.data?.status;
+  //     const authentication_id = directDebitData?.data?.id;
+  //     const updateLinkedAccount = await this.paymentService.updateLinkStatus(
+  //       authentication_id,
+  //       status,
+  //     );
+
+  //     console.log(directDebitData);
+  //     return {
+  //       data: directDebitData,
+  //     };
+  //   } catch (err) {}
+  // }
+
+  // @Post('directdebit/payment_succedeed')
+  // @HttpCode(HttpStatus.OK)
+  // async successPaymentDebit(
+  //   @Body() directDebitDataSucceded: any,
+  // ): Promise<any> {
+  //   try {
+  //     const status = directDebitDataSucceded.status;
+  //     const authentication_id =
+  //       directDebitDataSucceded.payment_method_id;
+  //     const updateLinkedAccount = await this.paymentService.updateDebitPayment(
+  //       authentication_id,
+  //       status,
+  //     );
+
+  //     console.log(authentication_id);
+
+  //     console.log(directDebitDataSucceded);
+  //     return {
+  //       data: directDebitDataSucceded,
+  //     };
+  //   } catch (err) {}
+  // }
 }
