@@ -110,7 +110,7 @@ export class PaymentService {
       const response = await this.listBankService.getBanks(apiKey);
       return response.data;
     } catch (err) {
-      console.log(err);
+      throw err;
     }
   }
 
@@ -126,7 +126,7 @@ export class PaymentService {
           currency: paymentDetails.currency,
           is_closed: true,
           is_single_use: true,
-          expected_amount: '20000',
+          expected_amount: '10000',
           bank_code: paymentDetails.bank_code,
           name: 'Hamdan Tr',
           expiration_date: expiresAt,
@@ -165,7 +165,7 @@ export class PaymentService {
         };
       }
 
-      throw { success: false, error: { message: 'Terjadi kesalahan' } };
+      throw { success: false, error: { message: 'Terjadi kesalahann' } };
     }
   }
 
@@ -282,8 +282,7 @@ export class PaymentService {
 
       return extendedResponse;
     } catch (err) {
-      console.log('error');
-      console.log(err);
+      throw err;
     }
   }
 
@@ -297,7 +296,6 @@ export class PaymentService {
       });
 
       if (!payment) {
-        console.log(payment);
         throw new HttpException(
           'authentication id not found',
           HttpStatus.NOT_FOUND,
@@ -317,10 +315,7 @@ export class PaymentService {
         where: { authentication_id: newAuthenticationId },
       });
 
-      console.log(payment);
-
       if (!payment) {
-        console.log(payment);
         throw new HttpException(
           'authentication id not found',
           HttpStatus.NOT_FOUND,
@@ -344,7 +339,6 @@ export class PaymentService {
     });
 
     if (!payment) {
-      console.log(payment);
       throw new HttpException('reference id not found', HttpStatus.NOT_FOUND);
     }
 
@@ -440,7 +434,6 @@ export class PaymentService {
     });
 
     if (!payment) {
-      console.log(payment);
       throw new HttpException('reference id not found', HttpStatus.NOT_FOUND);
     }
 
@@ -505,7 +498,7 @@ export class PaymentService {
 
       return extendedResponse;
     } catch (err) {
-      console.log(err);
+      throw err;
     }
   }
 

@@ -92,13 +92,12 @@ export class PaymentController {
   async updateQqrPayment(@Body() qrData: any): Promise<any> {
     try {
       const status = qrData?.data?.status;
-      const reference_id = qrData?.data?.reference_id;
+      const reference_id = qrData?.data?.qr_id;
       const updatedPayment = await this.paymentService.updatePaymentQrStatus(
         reference_id,
         status,
       );
       this.appGateway.sendStatusToClient(updatedPayment.status);
-      console.log(qrData);
       return {
         success: true,
         data: qrData,
@@ -124,8 +123,6 @@ export class PaymentController {
 
       const { external_id, amount } = xenditCallbackData;
 
-      console.log(xenditCallbackData);
-
       const updatedPayment =
         await this.paymentService.updatePaymentStatusByExternalId(
           external_id,
@@ -146,8 +143,6 @@ export class PaymentController {
           ...xenditCallbackData,
           messageSuccess,
         };
-        console.log(extendedResponse);
-
         return extendedResponse;
       } else {
         throw new Error('Failed to update payment status');
