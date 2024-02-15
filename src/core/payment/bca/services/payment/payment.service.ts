@@ -65,16 +65,12 @@ export class PaymentService {
       }
 
       const { amount, status, expiration_date, account_number } = payment;
+      
+      const convert = {amount, bank_code, status, invoice_id, expiration_date, external_id, account_number};
+      const encrypt = this.encryptData(convert)
 
-      return {
-        amount,
-        bank_code,
-        status,
-        invoice_id,
-        expiration_date,
-        external_id,
-        account_number,
-      };
+      return encrypt;
+
     } catch (error) {
       throw error;
     }
