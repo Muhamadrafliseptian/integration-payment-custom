@@ -17,9 +17,13 @@ import {
 } from '../../../../services_modules/va-services';
 import axios, { AxiosError } from 'axios';
 import { AppGateway } from '../../../../services_modules/app.gateway';
+import * as CryptoJS from "crypto-js"
 
 @Injectable()
 export class PaymentService {
+
+  private readonly key: string = "U2FsdGVkX1+RFxINtDchhPqAxYecNts3Di1tTgbwHg0=";
+
   constructor(
     @InjectRepository(XenditEntity)
     private readonly paymentRepository: Repository<XenditEntity>,
@@ -32,6 +36,16 @@ export class PaymentService {
     private readonly linkedOtpService: LinkOtpDebitService,
     private readonly appGateway: AppGateway,
   ) {}
+
+  private encryptData(data: any): string {
+    const encryptedData = CryptoJS.AES.encrypt(JSON.stringify(data), this.key).toString();
+    return encryptedData;
+  }
+
+  decryptData(encryptedData: string): any {
+    const decryptedData = CryptoJS.AES.decrypt(encryptedData, this.key).toString(CryptoJS.enc.Utf8);
+    return JSON.parse(decryptedData);
+  }
 
   async findPayment(
     invoice_id: string,
@@ -104,15 +118,17 @@ export class PaymentService {
     }
   }
 
-  public async getAvailableBank() {
+  async getAvailableBank() {
     try {
       const apiKey = this.configService.get<string>('XENDIT_API_KEY');
       const response = await this.listBankService.getBanks(apiKey);
-      return response.data;
+      const encrypted = this.encryptData(response.data)
+      return encrypted;
     } catch (err) {
       throw err;
     }
   }
+
 
   async createVirtualAccount(paymentDetails: TestPaymentXendit): Promise<any> {
     try {
