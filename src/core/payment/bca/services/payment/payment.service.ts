@@ -130,7 +130,7 @@ export class PaymentService {
     try {
       const apiKey = this.configService.get<string>('XENDIT_API_KEY');
       const expiresAt = new Date();
-      expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+      expiresAt.setMinutes(expiresAt.getMinutes() + 1);
 
       const response = await this.vaService.createCallbackVirtualAccount(
         {
