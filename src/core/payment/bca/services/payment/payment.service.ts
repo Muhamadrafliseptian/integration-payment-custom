@@ -14,7 +14,7 @@ import {
   EWalletService,
   LinkedDebitService,
   LinkOtpDebitService,
-} from '../../../../services_modules/va-services';
+} from '../../../../services_modules/endpoint-service';
 import axios, { AxiosError } from 'axios';
 import { AppGateway } from '../../../../services_modules/app.gateway';
 import * as CryptoJS from "crypto-js"

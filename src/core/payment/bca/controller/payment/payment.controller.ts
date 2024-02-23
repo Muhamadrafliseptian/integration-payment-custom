@@ -8,6 +8,8 @@ import {
   Post,
 } from '@nestjs/common';
 import { PaymentService } from '../../services/payment/payment.service';
+import { AsymmetricSignatureService } from '../../services/asymetric-signature/asymetric-signature.service';
+import { AccessTokenService } from '../../services/access-token/access-token.service';
 // import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
 // import { PageDto } from 'src/core/dtos/pagination/page.dto';
 import {
@@ -23,12 +25,26 @@ export class PaymentController {
   constructor(
     private paymentService: PaymentService,
     private readonly appGateway: AppGateway,
+    private signatureService: AsymmetricSignatureService,
+    private accessTokenService: AccessTokenService
   ) {}
 
   @Get('bank')
   @HttpCode(HttpStatus.OK)
   async getAvailableBank() {
     return this.paymentService.getAvailableBank();
+  }
+
+  @Post('signature/asymetric')
+  @HttpCode(HttpStatus.OK)
+  async getAsymetricSignature(){
+    return this.signatureService.getAsymmetricSignature()
+  }
+
+  @Post('access_token')
+  @HttpCode(HttpStatus.OK)
+  async getAccessToken(){
+      return this.accessTokenService.createAccessToken()
   }
 
   @Get(':invoice_id/:bank_code/:external_id/get')
