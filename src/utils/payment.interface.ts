@@ -4,4 +4,5 @@ interface TestPaymentXendit {
   bank_code: string;
   expiration_date: string;
   invoice_id: string;
+  amount: number
 }

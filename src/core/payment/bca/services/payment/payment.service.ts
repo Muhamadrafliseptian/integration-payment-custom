@@ -138,7 +138,7 @@ export class PaymentService {
           currency: paymentDetails.currency,
           is_closed: true,
           is_single_use: true,
-          expected_amount: '10000',
+          expected_amount: paymentDetails.amount,
           bank_code: paymentDetails.bank_code,
           name: 'Hamdan Tr',
           expiration_date: expiresAt,
@@ -150,7 +150,7 @@ export class PaymentService {
         this.paymentRepository.create({
           external_id: paymentDetails.external_id,
           invoice_id: 'INV-TNOS123',
-          amount: response.data.amount,
+          amount: response.data.expected_amount,
           status: response.data.status,
           bank_code: response.data.bank_code,
           account_number: response.data.account_number,
