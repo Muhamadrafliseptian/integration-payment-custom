@@ -69,9 +69,9 @@ export class AccessTokenService {
             const relativeUrl = "/openapi/v1.0/qr/qr-mpm-generate";
             const X_TIMESTAMP = moment().tz('Asia/Jakarta').format('YYYY-MM-DDTHH:mm:ssZ');
             const timestamp = moment(X_TIMESTAMP).format('YYYY-MM-DDTHH:mm:ssZ');
-    
+
             const makeQris = await this.postBodyQris(amount);
-    
+
             const requestBody = {
                 "amount": {
                     "value": amount,
@@ -81,20 +81,20 @@ export class AccessTokenService {
                 "terminalId": makeQris.invoice_id,
                 "partnerReferenceNo": makeQris.reference_id
             };
-    
+
             const requestBodyString = JSON.stringify(requestBody);
             const sha256Hash = crypto.createHash('sha256').update(requestBodyString).digest('hex');
-    
+
             const stringToSign = `${httpMethod}:${relativeUrl}:${accessToken}:${sha256Hash}:${timestamp}`;
-    
+
             const signature = crypto.createHmac('sha512', clientSecret).update(stringToSign).digest();
             const signatureSymmetric = Buffer.from(signature).toString('base64');
-    
+
             const encryptedSymmetric = CryptoJS.AES.encrypt(`${signatureSymmetric}`, key).toString()
             const encrypttimestamp = CryptoJS.AES.encrypt(`${timestamp}`, key).toString()
             const body = CryptoJS.AES.encrypt(`${requestBody}`, key).toString()
             const token = CryptoJS.AES.encrypt(`${accessToken}`, key).toString()
-    
+
             return {
                 requestBody,
                 signatureSymmetric,
@@ -106,7 +106,7 @@ export class AccessTokenService {
             throw err;
         }
     }
-    
+
     async postBodyQris(amount: any): Promise<any> {
         const key = this.configService.get<string>('access_token_key')
         try {
@@ -119,9 +119,9 @@ export class AccessTokenService {
                     reference_id: this.generateRandomReferenceNumber()
                 })
             );
-    
+
             const { actions, currency, bank_code, invoice_id, reference_id } = makeQris;
-    
+
             return {
                 actions, currency, bank_code, invoice_id, reference_id
             };
@@ -131,8 +131,7 @@ export class AccessTokenService {
         }
     }
 
-    async generateQrisBca(headers: any, partnerReferenceNo: string, value: string) {
-        console.log(headers);
+    async generateQrisBca(partnerReferenceNo: string, value: any, Headers: any) {
         try {
             const body = {
                 "amount": {
@@ -145,17 +144,17 @@ export class AccessTokenService {
             };
             const response = await axios.post('https://devapi.klikbca.com/openapi/v1.0/qr/qr-mpm-generate', body, {
                 headers: {
-                    'Content-Type': headers['Content-Type'],
-                    'X-Timestamp': headers['X-Timestamp'],
-                    'X-Signature': headers['X-Signature'],
-                    'X-External-ID': headers['X-External-ID'],
-                    'Channel-ID': headers['Channel-ID'],
-                    'X-Partner-ID': headers['X-Partner-ID'],
-                    'Authorization': headers['Authorization']
+                    'Content-Type': 'application/json',
+                    'X-Timestamp': '2024-02-26T17:36:41+07:00',
+                    'X-Signature': '6U1vxYAwSddCP9c8b5f8s86rPSpRPTTDXZPEPdxKnWYRLAhhCBvQyYgAZaR1vsccctTNXyrh+22cHfrZl+yiKQ==',
+                    'X-External-ID': '2857409248',
+                    'Channel-ID': '95251',
+                    'X-Partner-ID': '000002094',
+                    'Authorization': 'Bearer UutPIGmDvqzZQC7dgYZsoc1l43CfIIw9VbYQ4RYMOs9dE1eESq1NPJ'
                 }
             });
 
-            console.log(response.data);
+            // console.log(response.data);
 
             return response.data;
         } catch (err) {

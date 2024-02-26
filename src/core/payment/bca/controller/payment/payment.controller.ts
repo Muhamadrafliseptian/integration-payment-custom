@@ -73,15 +73,13 @@ export class PaymentController {
   @Post('get/qr_code')
   @HttpCode(HttpStatus.OK)
   async getSymmetric(@Body() requestData: any): Promise<string> {
-    if (!requestData || !requestData.X_SIGNATURE || !requestData.accessToken) {
-      console.log('====================================');
-      console.log('error');
-      console.log('====================================');
-    }
+    const { partnerReferenceNo, value, Headers } = requestData;
 
-    const { headers, partnerReferenceNo, value } = requestData;
+    console.log('====================================');
+    console.log(requestData);
+    console.log('====================================');
 
-    return this.accessTokenService.generateQrisBca(headers, partnerReferenceNo, value);
+    return this.accessTokenService.generateQrisBca(partnerReferenceNo, value, Headers);
   }
 
   @Post('qr/body')

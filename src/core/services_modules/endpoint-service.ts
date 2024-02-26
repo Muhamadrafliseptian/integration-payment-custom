@@ -90,12 +90,12 @@ export class AccessTokenPoint {
 
 @Injectable()
 export class GenerateQrisBcaPoint {
-  async generateQris(data: any, headers: Record<string, string>): Promise<AxiosResponse> {
+  async generateQris(data: any, headers: any): Promise<AxiosResponse> {
     return axios.post(
       'https://devapi.klikbca.com/openapi/v1.0/qr/qr-mpm-generate',
       data,
       {
-        headers: headers
+        headers: {headers}
       },
     );
   }
