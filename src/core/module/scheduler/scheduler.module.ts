@@ -9,7 +9,7 @@ import {
   VirtualAccountService,
   LinkedDebitService,
   LinkOtpDebitService,
-} from 'src/core/services_modules/va-services';
+} from 'src/core/services_modules/endpoint-service';
 import { AppGateway } from 'src/core/services_modules/app.gateway';
 import { PaymentService } from '../../payment/bca/services/payment/payment.service';
 import { ScheduleModule } from '@nestjs/schedule';

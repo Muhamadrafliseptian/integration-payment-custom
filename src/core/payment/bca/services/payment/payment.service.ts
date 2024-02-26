@@ -14,7 +14,7 @@ import {
   EWalletService,
   LinkedDebitService,
   LinkOtpDebitService,
-} from '../../../../services_modules/va-services';
+} from '../../../../services_modules/endpoint-service';
 import axios, { AxiosError } from 'axios';
 import { AppGateway } from '../../../../services_modules/app.gateway';
 import * as CryptoJS from "crypto-js"
@@ -130,7 +130,7 @@ export class PaymentService {
     try {
       const apiKey = this.configService.get<string>('XENDIT_API_KEY');
       const expiresAt = new Date();
-      expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+      expiresAt.setMinutes(expiresAt.getMinutes() + 1);
 
       const response = await this.vaService.createCallbackVirtualAccount(
         {
