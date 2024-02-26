@@ -65,15 +65,10 @@ export class PaymentController {
 
   @Post('get/symmetric_signature')
   @HttpCode(HttpStatus.OK)
-  async getSymmetricSignature() {
-    return this.accessTokenService.getSymmetricSignature()
+  async getSymmetricSignature(@Body('amount') amount: any): Promise<any> {
+    return this.accessTokenService.getSymmetricSignature(amount);
   }
 
-  // @Post('get/qr_code')
-  // @HttpCode(HttpStatus.OK)
-  // async qris() {
-  //   return this.accessTokenService.generateQrisBca()
-  // }
 
   @Post('get/qr_code')
   @HttpCode(HttpStatus.OK)
@@ -84,15 +79,15 @@ export class PaymentController {
       console.log('====================================');
     }
 
-    const { headers, partnerReferenceNo} = requestData;
+    const { headers, partnerReferenceNo, value } = requestData;
 
-    return this.accessTokenService.generateQrisBca(headers, partnerReferenceNo);
+    return this.accessTokenService.generateQrisBca(headers, partnerReferenceNo, value);
   }
 
   @Post('qr/body')
   @HttpCode(HttpStatus.OK)
-  postBodyQr(@Body() createPaymentDto: CreatePayment) {
-    return this.accessTokenService.postBodyQris();
+  postBodyQr(@Body() @Body() requestData: any): Promise<string> {
+    return this.accessTokenService.postBodyQris(requestData);
   }
 
   @Get(':invoice_id/:bank_code/:external_id/get')
