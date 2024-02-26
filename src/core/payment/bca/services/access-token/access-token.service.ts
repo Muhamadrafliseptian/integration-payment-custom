@@ -61,11 +61,7 @@ export class AccessTokenService {
     }
 
     async getSymmetricSignature(amount: any): Promise<any> {
-<<<<<<< HEAD
-        const key = this.configService.get<string>('access_token_key')
-=======
         const key = this.configService.get<string>('access_token_key');
->>>>>>> 556da15e29e99a071d4013e4ae57bfa7b32bfc4d
         try {
             const accessToken = await this.createAccessToken();
             const clientSecret = "5acebfb3-f89a-4d80-a3d3-bae8b7513b61";
