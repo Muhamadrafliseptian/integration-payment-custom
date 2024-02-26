@@ -143,23 +143,11 @@ export class AccessTokenService {
                 "partnerReferenceNo": partnerReferenceNo
             };
             const response = await axios.post('https://devapi.klikbca.com/openapi/v1.0/qr/qr-mpm-generate', body, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Timestamp': '2024-02-26T17:36:41+07:00',
-                    'X-Signature': '6U1vxYAwSddCP9c8b5f8s86rPSpRPTTDXZPEPdxKnWYRLAhhCBvQyYgAZaR1vsccctTNXyrh+22cHfrZl+yiKQ==',
-                    'X-External-ID': '2857409248',
-                    'Channel-ID': '95251',
-                    'X-Partner-ID': '000002094',
-                    'Authorization': 'Bearer UutPIGmDvqzZQC7dgYZsoc1l43CfIIw9VbYQ4RYMOs9dE1eESq1NPJ'
-                }
+                headers: Headers
             });
-
-            // console.log(response.data);
 
             return response.data;
         } catch (err) {
-            console.error('Error generating QRIS BCA:', err);
-            throw err;
         }
     }
 
