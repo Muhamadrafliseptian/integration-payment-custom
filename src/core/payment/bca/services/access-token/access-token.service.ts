@@ -12,14 +12,6 @@ import { XenditEntity } from 'src/typeorm/entities/Xendit';
 import { PaymentParams } from 'src/utils/type';
 import { response } from 'express';
 import axios from 'axios';
-
-// axios.defaults.headers.common['Content-Type'] = 'application/json';
-// axios.defaults.headers.common['X-Timestamp'] = '2024-02-26T13:44:45+07:00';
-// axios.defaults.headers.common['X-Signature'] = 'nW8Zy6QbhE+h3CychNpZK2Owp8ZhD3jm4T5kPzpLpz4M5ZHMPNHNkbiBG1qjlwtLmHkifrmOoBxvkPpuGY4HPw==';
-// axios.defaults.headers.common['X-External-ID'] = '7058288583';
-// axios.defaults.headers.common['Channel-ID'] = '95251';
-// axios.defaults.headers.common['X-Partner-ID'] = '000002094';
-// axios.defaults.headers.common['Authorization'] = 'Bearer k678op1Ryr3UMhJq6dukQW89WfYRnCOmr9krR79wZOrxvx8TNgxL1n';
 @Injectable()
 export class AccessTokenService {
     constructor(
@@ -119,7 +111,8 @@ export class AccessTokenService {
         }
     }
 
-    async generateQrisBca(headers: any) {
+    async generateQrisBca(headers: any, partnerReferenceNo: string) {
+        console.log(headers);
         try {
             const body = {
                 "amount": {
@@ -128,9 +121,8 @@ export class AccessTokenService {
                 },
                 "merchantId": "000002094",
                 "terminalId": "A1026229",
-                "partnerReferenceNo": "7001812905"
+                "partnerReferenceNo": partnerReferenceNo
             };
-
             const response = await axios.post('https://devapi.klikbca.com/openapi/v1.0/qr/qr-mpm-generate', body, {
                 headers: {
                     'Content-Type': headers['Content-Type'],
@@ -142,6 +134,8 @@ export class AccessTokenService {
                     'Authorization': headers['Authorization']
                 }
             });
+
+            console.log(response.data);
 
             return response.data;
         } catch (err) {

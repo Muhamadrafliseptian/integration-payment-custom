@@ -84,9 +84,9 @@ export class PaymentController {
       console.log('====================================');
     }
 
-    const { headers} = requestData;
+    const { headers, partnerReferenceNo} = requestData;
 
-    return this.accessTokenService.generateQrisBca(headers);
+    return this.accessTokenService.generateQrisBca(headers, partnerReferenceNo);
   }
 
   @Post('qr/body')
