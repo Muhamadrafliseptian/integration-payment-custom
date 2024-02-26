@@ -15,6 +15,7 @@ import {
   CreateLink,
 } from 'src/core/dtos/payment/create-payment.dto';
 // import { XenditEntity } from 'src/typeorm/entities/Xendit';
+import { AccessTokenService } from '../../services/access-token/access-token.service';
 import { XenditEntity } from '../../../../../typeorm/entities/Xendit';
 import { AppGateway } from 'src/core/services_modules/app.gateway';
 
@@ -23,6 +24,7 @@ export class PaymentController {
   constructor(
     private paymentService: PaymentService,
     private readonly appGateway: AppGateway,
+    private accessTokenService: AccessTokenService
   ) {}
 
   @Get('bank')
