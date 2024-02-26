@@ -31,6 +31,61 @@ export class PaymentController {
     return this.paymentService.getAvailableBank();
   }
 
+  // @Post('generate/qris')
+  // @HttpCode(HttpStatus.OK)
+  // async generateQrisWithSignature(@Body() requestBody: any) {
+  //   try {
+  //     // 1. Dapatkan signature asimetris
+  //     const [signature, formattedTimestamp] = await this.accessTokenService.getAsymmetricSignature();
+
+  //     console.log('====================================');
+  //     console.log(signature);
+  //     console.log('====================================');
+
+  //     // 2. Dapatkan akses token dan signature simetris untuk generate QRIS BCA
+  //     const qrisData = await this.accessTokenService.generateQrisBca(requestBody);
+
+  //     return qrisData; // Anda bisa langsung mengembalikan data QRIS BCA dari sini
+  //   } catch (err) {
+  //     console.error('Error generating QRIS BCA:', err);
+  //     throw err;
+  //   }
+  // }
+
+
+  @Post('access_token')
+  @HttpCode(HttpStatus.OK)
+  async getAccessToken() {
+    return this.accessTokenService.createAccessToken()
+  }
+
+  @Post('get/symmetric_signature')
+  @HttpCode(HttpStatus.OK)
+  async getSymmetricSignature(@Body('amount') amount: any): Promise<any> {
+    return this.accessTokenService.getSymmetricSignature(amount);
+  }
+
+
+  @Post('get/qr_code')
+  @HttpCode(HttpStatus.OK)
+  async getSymmetric(@Body() requestData: any): Promise<string> {
+    if (!requestData || !requestData.X_SIGNATURE || !requestData.accessToken) {
+      console.log('====================================');
+      console.log('error');
+      console.log('====================================');
+    }
+
+    const { headers, partnerReferenceNo, value } = requestData;
+
+    return this.accessTokenService.generateQrisBca(headers, partnerReferenceNo, value);
+  }
+
+  @Post('qr/body')
+  @HttpCode(HttpStatus.OK)
+  postBodyQr(@Body() @Body() requestData: any): Promise<string> {
+    return this.accessTokenService.postBodyQris(requestData);
+  }
+
   @Get(':invoice_id/:bank_code/:external_id/get')
   async findPayment(
     @Param('invoice_id') invoice_id: string,

@@ -61,7 +61,11 @@ export class AccessTokenService {
     }
 
     async getSymmetricSignature(amount: any): Promise<any> {
+<<<<<<< HEAD
         const key = this.configService.get<string>('access_token_key')
+=======
+        const key = this.configService.get<string>('access_token_key');
+>>>>>>> 556da15e29e99a071d4013e4ae57bfa7b32bfc4d
         try {
             const accessToken = await this.createAccessToken();
             const clientSecret = "5acebfb3-f89a-4d80-a3d3-bae8b7513b61";
@@ -69,9 +73,9 @@ export class AccessTokenService {
             const relativeUrl = "/openapi/v1.0/qr/qr-mpm-generate";
             const X_TIMESTAMP = moment().tz('Asia/Jakarta').format('YYYY-MM-DDTHH:mm:ssZ');
             const timestamp = moment(X_TIMESTAMP).format('YYYY-MM-DDTHH:mm:ssZ');
-
-            const makeQris = await this.postBodyQris();
-
+    
+            const makeQris = await this.postBodyQris(amount);
+    
             const requestBody = {
                 "amount": {
                     "value": amount,
@@ -81,42 +85,62 @@ export class AccessTokenService {
                 "terminalId": makeQris.invoice_id,
                 "partnerReferenceNo": makeQris.reference_id
             };
-
+    
             const requestBodyString = JSON.stringify(requestBody);
             const sha256Hash = crypto.createHash('sha256').update(requestBodyString).digest('hex');
-
+    
             const stringToSign = `${httpMethod}:${relativeUrl}:${accessToken}:${sha256Hash}:${timestamp}`;
-
+    
             const signature = crypto.createHmac('sha512', clientSecret).update(stringToSign).digest();
             const signatureSymmetric = Buffer.from(signature).toString('base64');
-
+    
             const encryptedSymmetric = CryptoJS.AES.encrypt(`${signatureSymmetric}`, key).toString()
             const encrypttimestamp = CryptoJS.AES.encrypt(`${timestamp}`, key).toString()
             const body = CryptoJS.AES.encrypt(`${requestBody}`, key).toString()
             const token = CryptoJS.AES.encrypt(`${accessToken}`, key).toString()
-
+    
             return {
                 requestBody,
                 signatureSymmetric,
                 accessToken,
                 timestamp
-                // encryptedSymmetric,
-                // encrypttimestamp,
-                // body,
-                // token
             };
         } catch (err) {
             console.error('Error generating signature:', err);
             throw err;
         }
     }
+    
+    async postBodyQris(amount: any): Promise<any> {
+        const key = this.configService.get<string>('access_token_key')
+        try {
+            const makeQris = await this.paymentRepository.save(
+                this.paymentRepository.create({
+                    actions: amount,
+                    currency: 'IDR',
+                    bank_code: '000002094',
+                    invoice_id: 'A1026229',
+                    reference_id: this.generateRandomReferenceNumber()
+                })
+            );
+    
+            const { actions, currency, bank_code, invoice_id, reference_id } = makeQris;
+    
+            return {
+                actions, currency, bank_code, invoice_id, reference_id
+            };
+        } catch (error) {
+            console.error("Error:", error);
+            throw error;
+        }
+    }
 
-    async generateQrisBca(headers: any, partnerReferenceNo: string) {
+    async generateQrisBca(headers: any, partnerReferenceNo: string, value: string) {
         console.log(headers);
         try {
             const body = {
                 "amount": {
-                    "value": "10000.00",
+                    "value": value,
                     "currency": "IDR"
                 },
                 "merchantId": "000002094",
@@ -141,30 +165,6 @@ export class AccessTokenService {
         } catch (err) {
             console.error('Error generating QRIS BCA:', err);
             throw err;
-        }
-    }
-
-    async postBodyQris(): Promise<any> {
-        const key = this.configService.get<string>('access_token_key')
-        try {
-            const makeQris = await this.paymentRepository.save(
-                this.paymentRepository.create({
-                    actions: "10000.00",
-                    currency: 'IDR',
-                    bank_code: '000002094',
-                    invoice_id: 'A1026229',
-                    reference_id: this.generateRandomReferenceNumber()
-                })
-            );
-
-            const { actions, currency, bank_code, invoice_id, reference_id } = makeQris;
-
-            return {
-                actions, currency, bank_code, invoice_id, reference_id
-            };
-        } catch (error) {
-            console.error("Error:", error);
-            throw error;
         }
     }
 
