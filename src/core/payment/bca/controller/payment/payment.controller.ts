@@ -8,8 +8,6 @@ import {
   Post,
 } from '@nestjs/common';
 import { PaymentService } from '../../services/payment/payment.service';
-import { AsymmetricSignatureService } from '../../services/asymetric-signature/asymetric-signature.service';
-import { AccessTokenService } from '../../services/access-token/access-token.service';
 // import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
 // import { PageDto } from 'src/core/dtos/pagination/page.dto';
 import {
@@ -25,74 +23,12 @@ export class PaymentController {
   constructor(
     private paymentService: PaymentService,
     private readonly appGateway: AppGateway,
-    private signatureService: AsymmetricSignatureService,
-    private accessTokenService: AccessTokenService
-  ) { }
+  ) {}
 
   @Get('bank')
   @HttpCode(HttpStatus.OK)
   async getAvailableBank() {
     return this.paymentService.getAvailableBank();
-  }
-
-  // @Post('generate/qris')
-  // @HttpCode(HttpStatus.OK)
-  // async generateQrisWithSignature(@Body() requestBody: any) {
-  //   try {
-  //     // 1. Dapatkan signature asimetris
-  //     const [signature, formattedTimestamp] = await this.accessTokenService.getAsymmetricSignature();
-
-  //     console.log('====================================');
-  //     console.log(signature);
-  //     console.log('====================================');
-
-  //     // 2. Dapatkan akses token dan signature simetris untuk generate QRIS BCA
-  //     const qrisData = await this.accessTokenService.generateQrisBca(requestBody);
-
-  //     return qrisData; // Anda bisa langsung mengembalikan data QRIS BCA dari sini
-  //   } catch (err) {
-  //     console.error('Error generating QRIS BCA:', err);
-  //     throw err;
-  //   }
-  // }
-
-
-  @Post('access_token')
-  @HttpCode(HttpStatus.OK)
-  async getAccessToken() {
-    return this.accessTokenService.createAccessToken()
-  }
-
-  @Post('get/symmetric_signature')
-  @HttpCode(HttpStatus.OK)
-  async getSymmetricSignature() {
-    return this.accessTokenService.getSymmetricSignature()
-  }
-
-  // @Post('get/qr_code')
-  // @HttpCode(HttpStatus.OK)
-  // async qris() {
-  //   return this.accessTokenService.generateQrisBca()
-  // }
-
-  @Post('get/qr_code')
-  @HttpCode(HttpStatus.OK)
-  async getSymmetric(@Body() requestData: any): Promise<string> {
-    if (!requestData || !requestData.X_SIGNATURE || !requestData.accessToken) {
-      console.log('====================================');
-      console.log('error');
-      console.log('====================================');
-    }
-
-    const { headers, partnerReferenceNo} = requestData;
-
-    return this.accessTokenService.generateQrisBca(headers, partnerReferenceNo);
-  }
-
-  @Post('qr/body')
-  @HttpCode(HttpStatus.OK)
-  postBodyQr(@Body() createPaymentDto: CreatePayment) {
-    return this.accessTokenService.postBodyQris();
   }
 
   @Get(':invoice_id/:bank_code/:external_id/get')

@@ -60,7 +60,7 @@ export class AccessTokenService {
         return [signature, formattedTimestamp];
     }
 
-    async getSymmetricSignature(): Promise<any> {
+    async getSymmetricSignature(amount: any): Promise<any> {
         const key = this.configService.get<string>('access_token_key')
         try {
             const accessToken = await this.createAccessToken();
@@ -74,7 +74,7 @@ export class AccessTokenService {
 
             const requestBody = {
                 "amount": {
-                    "value": makeQris.actions,
+                    "value": amount,
                     "currency": makeQris.currency
                 },
                 "merchantId": makeQris.bank_code,
