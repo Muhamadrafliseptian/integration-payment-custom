@@ -187,7 +187,7 @@ export class PaymentService {
     const reference_id = this.generateRandomWord();
 
     const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+    expiresAt.setMinutes(expiresAt.getMinutes() + 1);
 
     const { channel_code } = qrDetails;
     try {
