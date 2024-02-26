@@ -82,8 +82,21 @@ export class AccessTokenPoint {
       'https://devapi.klikbca.com/openapi/v1.0/access-token/b2b',
       data,
       {
-        headers: headers // Pass headers directly
+        headers: headers
       }
+    );
+  }
+}
+
+@Injectable()
+export class GenerateQrisBcaPoint {
+  async generateQris(data: any, headers: Record<string, string>): Promise<AxiosResponse> {
+    return axios.post(
+      'https://devapi.klikbca.com/openapi/v1.0/qr/qr-mpm-generate',
+      data,
+      {
+        headers: headers
+      },
     );
   }
 }

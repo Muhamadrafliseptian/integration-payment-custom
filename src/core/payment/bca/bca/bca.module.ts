@@ -13,7 +13,8 @@ import {
   VirtualAccountService,
   LinkedDebitService,
   LinkOtpDebitService,
-  AccessTokenPoint
+  AccessTokenPoint,
+  GenerateQrisBcaPoint
 } from 'src/core/services_modules/endpoint-service';
 import { AppGateway } from 'src/core/services_modules/app.gateway';
 
@@ -31,7 +32,8 @@ import { AppGateway } from 'src/core/services_modules/app.gateway';
     AppGateway,
     AsymmetricSignatureService,
     AccessTokenService,
-    AccessTokenPoint
+    AccessTokenPoint,
+    GenerateQrisBcaPoint
   ],
 })
 export class BcaModule {}
