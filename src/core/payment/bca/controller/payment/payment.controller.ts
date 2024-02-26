@@ -8,8 +8,6 @@ import {
   Post,
 } from '@nestjs/common';
 import { PaymentService } from '../../services/payment/payment.service';
-import { AsymmetricSignatureService } from '../../services/asymetric-signature/asymetric-signature.service';
-import { AccessTokenService } from '../../services/access-token/access-token.service';
 // import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
 // import { PageDto } from 'src/core/dtos/pagination/page.dto';
 import {
@@ -17,6 +15,7 @@ import {
   CreateLink,
 } from 'src/core/dtos/payment/create-payment.dto';
 // import { XenditEntity } from 'src/typeorm/entities/Xendit';
+import { AccessTokenService } from '../../services/access-token/access-token.service';
 import { XenditEntity } from '../../../../../typeorm/entities/Xendit';
 import { AppGateway } from 'src/core/services_modules/app.gateway';
 
@@ -25,9 +24,8 @@ export class PaymentController {
   constructor(
     private paymentService: PaymentService,
     private readonly appGateway: AppGateway,
-    private signatureService: AsymmetricSignatureService,
     private accessTokenService: AccessTokenService
-  ) { }
+  ) {}
 
   @Get('bank')
   @HttpCode(HttpStatus.OK)
