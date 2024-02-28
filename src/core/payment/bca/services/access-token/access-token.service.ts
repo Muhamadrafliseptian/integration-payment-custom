@@ -136,7 +136,8 @@ export class AccessTokenService {
     }
 
     async generateQrisBca(headers: any, requestData: any) {
-        console.log(headers);
+        
+        console.log(requestData.validityPeriod);
         
         try {
             const body = {
@@ -147,7 +148,7 @@ export class AccessTokenService {
                 "merchantId": "000002094",
                 "terminalId": "A1026229",
                 "partnerReferenceNo": headers['x-external-id'],
-                "validityPeriod":  headers
+                "validityPeriod": `${requestData.validityPeriod}`
             };
 
             const headersData = {
