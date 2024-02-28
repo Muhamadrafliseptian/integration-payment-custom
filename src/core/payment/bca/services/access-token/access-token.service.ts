@@ -69,7 +69,7 @@ export class AccessTokenService {
             const relativeUrl = "/openapi/v1.0/qr/qr-mpm-generate";
             const X_TIMESTAMP = moment().tz('Asia/Jakarta');
             const timestamp = X_TIMESTAMP.format('YYYY-MM-DDTHH:mm:ssZ');
-            const validityPeriod = X_TIMESTAMP.clone().add(5, 'minutes');
+            const validityPeriod = X_TIMESTAMP.clone().add(30, 'minutes');
     
             const timestampValid = validityPeriod.format('YYYY-MM-DDTHH:mm:ssZ');
             const makeQris = await this.postBodyQris(amount);
@@ -102,7 +102,8 @@ export class AccessTokenService {
                 requestBody,
                 signatureSymmetric,
                 accessToken,
-                timestamp
+                timestamp,
+                timestampValid
             };
         } catch (err) {
             console.error('Error generating signature:', err);
