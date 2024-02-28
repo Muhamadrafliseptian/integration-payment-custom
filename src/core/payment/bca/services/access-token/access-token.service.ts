@@ -67,11 +67,13 @@ export class AccessTokenService {
             const clientSecret = "5acebfb3-f89a-4d80-a3d3-bae8b7513b61";
             const httpMethod = "POST";
             const relativeUrl = "/openapi/v1.0/qr/qr-mpm-generate";
-            const X_TIMESTAMP = moment().tz('Asia/Jakarta').format('YYYY-MM-DDTHH:mm:ssZ');
-            const timestamp = moment(X_TIMESTAMP).format('YYYY-MM-DDTHH:mm:ssZ');
-
+            const X_TIMESTAMP = moment().tz('Asia/Jakarta');
+            const timestamp = X_TIMESTAMP.format('YYYY-MM-DDTHH:mm:ssZ');
+            const validityPeriod = X_TIMESTAMP.clone().add(5, 'minutes');
+    
+            const timestampValid = validityPeriod.format('YYYY-MM-DDTHH:mm:ssZ');
             const makeQris = await this.postBodyQris(amount);
-
+    
             const requestBody = {
                 "amount": {
                     "value": amount,
@@ -79,14 +81,15 @@ export class AccessTokenService {
                 },
                 "merchantId": makeQris.bank_code,
                 "terminalId": makeQris.invoice_id,
-                "partnerReferenceNo": makeQris.reference_id
+                "partnerReferenceNo": makeQris.reference_id,
+                "validityPeriod": timestampValid
             };
-
+    
             const requestBodyString = JSON.stringify(requestBody);
             const sha256Hash = crypto.createHash('sha256').update(requestBodyString).digest('hex');
-
+    
             const stringToSign = `${httpMethod}:${relativeUrl}:${accessToken}:${sha256Hash}:${timestamp}`;
-
+    
             const signature = crypto.createHmac('sha512', clientSecret).update(stringToSign).digest();
             const signatureSymmetric = Buffer.from(signature).toString('base64');
             
@@ -94,7 +97,7 @@ export class AccessTokenService {
             const encrypttimestamp = CryptoJS.AES.encrypt(`${timestamp}`, key).toString()
             const body = CryptoJS.AES.encrypt(`${requestBody}`, key).toString()
             const token = CryptoJS.AES.encrypt(`${accessToken}`, key).toString()
-
+    
             return {
                 requestBody,
                 signatureSymmetric,
@@ -106,6 +109,7 @@ export class AccessTokenService {
             throw err;
         }
     }
+    
 
     async postBodyQris(amount: any): Promise<any> {
         const key = this.configService.get<string>('access_token_key')
@@ -142,7 +146,8 @@ export class AccessTokenService {
                 },
                 "merchantId": "000002094",
                 "terminalId": "A1026229",
-                "partnerReferenceNo": headers['x-external-id']
+                "partnerReferenceNo": headers['x-external-id'],
+                "validityPeriod":  headers
             };
 
             const headersData = {
