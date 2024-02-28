@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Header, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AccessTokenPoint } from 'src/core/services_modules/endpoint-service';
 import { GenerateQrisBcaPoint } from 'src/core/services_modules/endpoint-service';
@@ -89,7 +89,7 @@ export class AccessTokenService {
 
             const signature = crypto.createHmac('sha512', clientSecret).update(stringToSign).digest();
             const signatureSymmetric = Buffer.from(signature).toString('base64');
-
+            
             const encryptedSymmetric = CryptoJS.AES.encrypt(`${signatureSymmetric}`, key).toString()
             const encrypttimestamp = CryptoJS.AES.encrypt(`${timestamp}`, key).toString()
             const body = CryptoJS.AES.encrypt(`${requestBody}`, key).toString()
@@ -131,23 +131,43 @@ export class AccessTokenService {
         }
     }
 
-    async generateQrisBca(partnerReferenceNo: string, value: any, Headers: any) {
+    async generateQrisBca(headers: any, requestData: any) {
+        console.log(headers);
+        
         try {
             const body = {
                 "amount": {
-                    "value": value,
+                    "value": "1500000.00",
                     "currency": "IDR"
                 },
                 "merchantId": "000002094",
                 "terminalId": "A1026229",
-                "partnerReferenceNo": partnerReferenceNo
+                "partnerReferenceNo": headers['x-external-id']
             };
-            const response = await axios.post('https://devapi.klikbca.com/openapi/v1.0/qr/qr-mpm-generate', body, {
-                headers: Headers
-            });
 
-            return response.data;
+            const headersData = {
+                "Content-Type": "application/json",
+                "Authorization": headers['authorization'],
+                "X-Timestamp": headers['x-timestamp'],
+                "X-External-ID": headers['x-external-id'],
+                "X-Partner-ID": '000002094',
+                "X-Signature": headers['x-signature'],
+                "Channel-ID": '95251'
+            }
+
+            const generateResponse = await axios({
+                url: 'https://devapi.klikbca.com/openapi/v1.0/qr/qr-mpm-generate',
+                method: "POST",
+                headers: {
+                    ...headersData
+                },
+                data: JSON.stringify(body),
+            })
+
+            return generateResponse.data;
+
         } catch (err) {
+            console.log(err);
         }
     }
 
@@ -158,5 +178,3 @@ export class AccessTokenService {
         return randomNumber.toString();
     }
 }
-
-

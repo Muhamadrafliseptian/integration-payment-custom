@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Headers
 } from '@nestjs/common';
 import { PaymentService } from '../../services/payment/payment.service';
 // import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
@@ -18,6 +19,8 @@ import {
 import { AccessTokenService } from '../../services/access-token/access-token.service';
 import { XenditEntity } from '../../../../../typeorm/entities/Xendit';
 import { AppGateway } from 'src/core/services_modules/app.gateway';
+import { request } from 'http';
+import { log } from 'console';
 
 @Controller('payment')
 export class PaymentController {
@@ -70,11 +73,14 @@ export class PaymentController {
 
   @Post('get/qr_code')
   @HttpCode(HttpStatus.OK)
-  async getSymmetric(@Body() requestData: any): Promise<string> {
+  async getSymmetric(@Headers() headers: string, @Body() requestData: any): Promise<string> {
     try {
-      const { partnerReferenceNo, value, headers } = requestData;
-      return this.accessTokenService.generateQrisBca(partnerReferenceNo, value, headers)
+      return this.accessTokenService.generateQrisBca(headers, requestData);
     } catch (error) {
+      // Tangani kesalahan di sini
+      console.log("Error :");
+      console.log(error);
+      
     }
   }
 
