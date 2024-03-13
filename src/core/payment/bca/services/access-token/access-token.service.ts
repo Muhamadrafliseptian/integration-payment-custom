@@ -65,9 +65,9 @@ export class AccessTokenService {
             const relativeUrl = "/openapi/v1.0/qr/qr-mpm-generate";
             const X_TIMESTAMP = moment().tz('Asia/Jakarta');
             const timestamp = X_TIMESTAMP.format('YYYY-MM-DDTHH:mm:ssZ');
-            const validityPeriod = moment().add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ssZ');
+            const validityPeriod = X_TIMESTAMP.clone().add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ssZ');
             const makeQris = await this.postBodyQris(amounts);
-    
+
             const requestBody = {
                 "amount": {
                     "value": amounts,
@@ -76,22 +76,22 @@ export class AccessTokenService {
                 "merchantId": '000002094',
                 "terminalId": 'A1026229',
                 "partnerReferenceNo": makeQris.reference_id,
-                // "validityPeriod": validityPeriod
+                "validityPeriod": validityPeriod
             };
-    
+
             const requestBodyString = JSON.stringify(requestBody);
             const sha256Hash = crypto.createHash('sha256').update(requestBodyString).digest('hex');
-    
+
             const stringToSign = `${httpMethod}:${relativeUrl}:${accessToken}:${sha256Hash}:${timestamp}`;
-    
+
             const signature = crypto.createHmac('sha512', clientSecret).update(stringToSign).digest();
             const signatureSymmetric = Buffer.from(signature).toString('base64');
-            
+
             const encryptedSymmetric = CryptoJS.AES.encrypt(`${signatureSymmetric}`, key).toString()
             const encrypttimestamp = CryptoJS.AES.encrypt(`${timestamp}`, key).toString()
             const body = CryptoJS.AES.encrypt(`${requestBody}`, key).toString()
             const token = CryptoJS.AES.encrypt(`${accessToken}`, key).toString()
-    
+
             return {
                 requestBody,
                 signatureSymmetric,
@@ -105,7 +105,7 @@ export class AccessTokenService {
     }
 
     async generateQrisBca(headers: any, requestData: any) {
-        
+
         try {
             const body = {
                 "amount": {
@@ -115,7 +115,7 @@ export class AccessTokenService {
                 "merchantId": "000002094",
                 "terminalId": "A1026229",
                 "partnerReferenceNo": headers['x-external-id'],
-                // "validityPeriod": `${requestData.validityPeriod}` 
+                "validityPeriod": `${requestData.validityPeriod}`
             };
 
             const headersData = {
