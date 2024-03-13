@@ -28,7 +28,7 @@ export class PaymentController {
     private paymentService: PaymentService,
     private readonly appGateway: AppGateway,
     private accessTokenService: AccessTokenService
-  ) {}
+  ) { }
 
   @Get('bank')
   @HttpCode(HttpStatus.OK)
@@ -64,26 +64,50 @@ export class PaymentController {
     return this.accessTokenService.createAccessToken()
   }
 
-  @Post('bca/generate/symmetric_signature')
+  @Post('bca/generate/qris_symmetric_signature')
   @HttpCode(HttpStatus.OK)
   async getSymmetricSignature(@Body('amount') amounts: any): Promise<any> {
     return this.accessTokenService.getSymmetricSignature(amounts);
   }
 
+  @Post('bca/generate/va_symmetric_signature')
+  @HttpCode(HttpStatus.OK)
+  async getVaSymmetric(@Body() body: { amount: any, customerNo: any }): Promise<any> {
+    const { amount, customerNo } = body;
+    return await this.accessTokenService.getSymmetricSignatureVa(amount, customerNo);
+  }
 
   @Post('bca/qris')
   @HttpCode(HttpStatus.OK)
-  async getSymmetric(@Headers() headers: string, @Body() requestData: any): Promise<string> {
+  async generateQris(@Headers() headers: string, @Body() requestData: any): Promise<string> {
     try {
       return this.accessTokenService.generateQrisBca(headers, requestData);
     } catch (error) {
-      // Tangani kesalahan di sini
-      console.log("Error :");
       console.log(error);
-      
     }
   }
 
+  // @Post('bca/va')
+  // @HttpCode(HttpStatus.OK)
+  // async generateVa(@Headers() headers: string, @Body() requestData: any): Promise<string> {
+  //   try {
+  //     return this.accessTokenService.generateVaBca(headers, requestData);
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }
+
+  @Post('bca/va')
+  @HttpCode(HttpStatus.OK)
+  async generateVa(@Body() requestData: any): Promise<string> {
+    try {
+      const result = await this.accessTokenService.generateVaBca(requestData);
+      return result;
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
   @Post('qr/body')
   @HttpCode(HttpStatus.OK)
   postBodyQr(@Body() @Body() requestData: any): Promise<string> {

@@ -148,6 +148,8 @@ export class AccessTokenService {
         try {
             const randomInvoice = this.generateRandomReferenceNumber()
             const invoiceId = `INVBCA${randomInvoice}`;
+            const expiresAt = new Date();
+            expiresAt.setMinutes(expiresAt.getMinutes() + 30);
             const makeQris = await this.paymentRepository.save(
                 this.paymentRepository.create({
                     amount: amounts,
@@ -155,7 +157,8 @@ export class AccessTokenService {
                     bank_code: 'QRISBCA',
                     invoice_id: invoiceId,
                     reference_id: this.generateRandomReferenceNumber(),
-                    status_pembayaran: "SUCCESS"
+                    status_pembayaran: "ACTIVE",
+                    expiration_date: expiresAt.toISOString(),
                 })
             );
 
@@ -169,6 +172,125 @@ export class AccessTokenService {
             throw error;
         }
     }
+
+    async getSymmetricSignatureVa(amounts: any, customerNom: any) {
+        const clientSecret = this.configService.get<string>('client_secret')
+        try {
+            const accessToken = await this.createAccessToken()
+            const client_secret = clientSecret
+            const httpMethod = "POST"
+            const relativeUrl = "/openapi/v1.0/transfer-va/inquiry";
+            const X_TIMESTAMP = moment().tz('Asia/Jakarta');
+            const timestamp = X_TIMESTAMP.format('YYYY-MM-DDTHH:mm:ssZ');
+            const makeVa = await this.postBodyVa(amounts, customerNom);
+
+            const partnerServiceId = "000002094"
+            const requestBody = {
+                "partnerServiceId": partnerServiceId,
+                "customerNo": customerNom,
+                "virtualAccountNo": `${partnerServiceId}${customerNom}`,
+                "channelCode": '18245',
+                "trxDateInit": timestamp,
+                "amount": {
+                    "value": amounts,
+                    "currency": "IDR"
+                },
+                "inquiryRequestId": "202202110909314440200001136962",
+            }
+
+            const requestBodyString = JSON.stringify(requestBody);
+            const sha256Hash = crypto.createHash('sha256').update(requestBodyString).digest('hex');
+
+            const stringToSign = `${httpMethod}:${relativeUrl}:${accessToken}:${sha256Hash}:${timestamp}`;
+
+            const signature = crypto.createHmac('sha512', client_secret).update(stringToSign).digest();
+            const signatureSymmetric = Buffer.from(signature).toString('base64');
+
+            return {
+                requestBody,
+                signatureSymmetric,
+                accessToken,
+                timestamp
+            };
+        } catch (err) {
+        }
+    }
+
+    async generateVaBca(requestData: any): Promise<any> {
+        try {
+            const { partnerServiceId, customerNo, virtualAccountNo, channelCode, trxDateInit, value } = requestData
+            const body = {
+                "partnerServiceId": `${partnerServiceId}`,
+                "customerNo": `${customerNo}`,
+                "virtualAccountNo": `${virtualAccountNo}`,
+                "channelCode": '18245',
+                "trxDateInit": `${trxDateInit}`,
+                "amount": {
+                    "value": `${value}`,
+                    "currency": "IDR"
+                },
+                "inquiryRequestId": "202202110909314440200001136962",
+            };
+
+            // const headersData = {
+            //     "Content-Type": "application/json",
+            //     "Authorization": headers['authorization'],
+            //     "X-Timestamp": headers['x-timestamp'],
+            //     "X-External-ID": headers['x-external-id'],
+            //     "X-Partner-ID": '000002094',
+            //     "X-Signature": headers['x-signature'],
+            //     "Channel-ID": '95251'
+            // }
+
+            // const generateResponse = await axios({
+            //     url: 'https://devapi.klikbca.com/openapi/v1.0/qr/qr-mpm-generate',
+            //     method: "POST",
+            //     headers: {
+            //         ...headersData
+            //     },
+            //     data: JSON.stringify(body),
+            // })
+
+            return body;
+        } catch (err) {
+            console.log(err);
+            throw err;
+        }
+    }
+
+    async postBodyVa(amounts: any, customerNom: any): Promise<any> {
+        try {
+            const randomInvoice = this.generateRandomReferenceNumber();
+            const expiresAt = new Date();
+            expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+
+            const invoiceId = `INVBCA${randomInvoice}`;
+            const referenceId = this.generateRandomReferenceNumber();
+
+            const makeQris = await this.paymentRepository.save(
+                this.paymentRepository.create({
+                    amount: amounts,
+                    currency: 'IDR',
+                    customer: customerNom,
+                    bank_code: 'VABCA',
+                    invoice_id: invoiceId,
+                    reference_id: referenceId,
+                    status_pembayaran: "ACTIVE",
+                    expiration_date: expiresAt.toISOString(),
+                })
+            );
+
+            const { amount, currency, bank_code, invoice_id, reference_id } = makeQris;
+
+            return {
+                amount, currency, bank_code, invoice_id, reference_id
+            };
+        } catch (error) {
+            console.error("Error:", error);
+            throw error;
+        }
+    }
+
 
     generateRandomReferenceNumber(): string {
         const min = 1000000000;
