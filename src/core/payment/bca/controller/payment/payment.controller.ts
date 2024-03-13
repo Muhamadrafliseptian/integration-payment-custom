@@ -64,14 +64,14 @@ export class PaymentController {
     return this.accessTokenService.createAccessToken()
   }
 
-  @Post('get/symmetric_signature')
+  @Post('bca/generate/symmetric_signature')
   @HttpCode(HttpStatus.OK)
-  async getSymmetricSignature(@Body('amount') amount: any): Promise<any> {
-    return this.accessTokenService.getSymmetricSignature(amount);
+  async getSymmetricSignature(@Body('amount') amounts: any): Promise<any> {
+    return this.accessTokenService.getSymmetricSignature(amounts);
   }
 
 
-  @Post('get/qr_code')
+  @Post('bca/qris')
   @HttpCode(HttpStatus.OK)
   async getSymmetric(@Headers() headers: string, @Body() requestData: any): Promise<string> {
     try {

@@ -36,10 +36,6 @@ export class AccessTokenService {
                 headers
             );
 
-            console.log('====================================');
-            console.log(response.data);
-            console.log('====================================');
-
             return response.data.accessToken;
         } catch (err) {
             console.error('Error creating access token:', err);
@@ -60,7 +56,7 @@ export class AccessTokenService {
         return [signature, formattedTimestamp];
     }
 
-    async getSymmetricSignature(amount: any): Promise<any> {
+    async getSymmetricSignature(amounts: any): Promise<any> {
         const key = this.configService.get<string>('access_token_key');
         try {
             const accessToken = await this.createAccessToken();
@@ -69,20 +65,18 @@ export class AccessTokenService {
             const relativeUrl = "/openapi/v1.0/qr/qr-mpm-generate";
             const X_TIMESTAMP = moment().tz('Asia/Jakarta');
             const timestamp = X_TIMESTAMP.format('YYYY-MM-DDTHH:mm:ssZ');
-            const validityPeriod = X_TIMESTAMP.clone().add(30, 'minutes');
-    
-            const timestampValid = validityPeriod.format('YYYY-MM-DDTHH:mm:ssZ');
-            const makeQris = await this.postBodyQris(amount);
+            const validityPeriod = moment().add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ssZ');
+            const makeQris = await this.postBodyQris(amounts);
     
             const requestBody = {
                 "amount": {
-                    "value": amount,
+                    "value": amounts,
                     "currency": makeQris.currency
                 },
-                "merchantId": makeQris.bank_code,
-                "terminalId": makeQris.invoice_id,
+                "merchantId": '000002094',
+                "terminalId": 'A1026229',
                 "partnerReferenceNo": makeQris.reference_id,
-                "validityPeriod": timestampValid
+                // "validityPeriod": validityPeriod
             };
     
             const requestBodyString = JSON.stringify(requestBody);
@@ -102,54 +96,26 @@ export class AccessTokenService {
                 requestBody,
                 signatureSymmetric,
                 accessToken,
-                timestamp,
-                timestampValid
+                timestamp
             };
         } catch (err) {
             console.error('Error generating signature:', err);
             throw err;
         }
     }
-    
-
-    async postBodyQris(amount: any): Promise<any> {
-        const key = this.configService.get<string>('access_token_key')
-        try {
-            const makeQris = await this.paymentRepository.save(
-                this.paymentRepository.create({
-                    actions: amount,
-                    currency: 'IDR',
-                    bank_code: '000002094',
-                    invoice_id: 'A1026229',
-                    reference_id: this.generateRandomReferenceNumber()
-                })
-            );
-
-            const { actions, currency, bank_code, invoice_id, reference_id } = makeQris;
-
-            return {
-                actions, currency, bank_code, invoice_id, reference_id
-            };
-        } catch (error) {
-            console.error("Error:", error);
-            throw error;
-        }
-    }
 
     async generateQrisBca(headers: any, requestData: any) {
-        
-        console.log(requestData.validityPeriod);
         
         try {
             const body = {
                 "amount": {
-                    "value": "1500000.00",
+                    "value": `${requestData.value}`,
                     "currency": "IDR"
                 },
                 "merchantId": "000002094",
                 "terminalId": "A1026229",
                 "partnerReferenceNo": headers['x-external-id'],
-                "validityPeriod": `${requestData.validityPeriod}`
+                // "validityPeriod": `${requestData.validityPeriod}` 
             };
 
             const headersData = {
@@ -175,6 +141,32 @@ export class AccessTokenService {
 
         } catch (err) {
             console.log(err);
+        }
+    }
+
+    async postBodyQris(amounts: any): Promise<any> {
+        try {
+            const randomInvoice = this.generateRandomReferenceNumber()
+            const invoiceId = `INVBCA${randomInvoice}`;
+            const makeQris = await this.paymentRepository.save(
+                this.paymentRepository.create({
+                    amount: amounts,
+                    currency: 'IDR',
+                    bank_code: 'QRISBCA',
+                    invoice_id: invoiceId,
+                    reference_id: this.generateRandomReferenceNumber(),
+                    status_pembayaran: "SUCCESS"
+                })
+            );
+
+            const { amount, currency, bank_code, invoice_id, reference_id } = makeQris;
+
+            return {
+                amount, currency, bank_code, invoice_id, reference_id
+            };
+        } catch (error) {
+            console.error("Error:", error);
+            throw error;
         }
     }
 
