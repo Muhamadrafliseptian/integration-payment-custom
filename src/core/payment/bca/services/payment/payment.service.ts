@@ -3,9 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { PaymentParams, LinkedAccountParams } from 'src/utils/type';
 import { In, LessThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-// import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
-// import { PageDto } from 'src/core/dtos/pagination/page.dto';
-// import { PageMetaDto } from 'src/core/dtos/pagination/page-meta.dto';
 import { XenditEntity } from '../../../../../typeorm/entities/Xendit';
 import {
   VirtualAccountService,
@@ -85,12 +82,10 @@ export class PaymentService {
       if (!payments || payments.length === 0) {
         return [{ message: 'No payments found for the specified invoice_id' }];
       }
-
-      // Map the payments to the required format
       const formattedPayments = payments.map((payment) => {
         const {
           amount,
-          status,
+          status_pembayaran,
           expiration_date,
           account_number,
           bank_code,
@@ -100,7 +95,7 @@ export class PaymentService {
         return {
           amount,
           bank_code,
-          status,
+          status_pembayaran,
           invoice_id,
           expiration_date,
           external_id,

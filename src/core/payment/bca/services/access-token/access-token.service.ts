@@ -1,7 +1,6 @@
 import { Header, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AccessTokenPoint } from 'src/core/services_modules/endpoint-service';
-import { GenerateQrisBcaPoint } from 'src/core/services_modules/endpoint-service';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as moment from 'moment-timezone';
@@ -19,7 +18,6 @@ export class AccessTokenService {
         private readonly paymentRepository: Repository<XenditEntity>,
         private readonly configService: ConfigService,
         private readonly pointService: AccessTokenPoint,
-        private readonly qrisPointService: GenerateQrisBcaPoint
     ) { }
     async createAccessToken(): Promise<any> {
         try {
@@ -38,8 +36,11 @@ export class AccessTokenService {
 
             return response.data.accessToken;
         } catch (err) {
-            console.error('Error creating access token:', err);
-            throw err;
+            const { responseCode, responseMessage } = err.response.data;
+            return {
+                statusCode: responseCode,
+                errorMessage: responseMessage
+            };
         }
     }
 
@@ -70,13 +71,13 @@ export class AccessTokenService {
 
             const requestBody = {
                 "amount": {
-                    "value": amounts,
+                    "value": "15000.00",
                     "currency": makeQris.currency
                 },
                 "merchantId": '000002094',
                 "terminalId": 'A1026229',
-                "partnerReferenceNo": makeQris.reference_id,
-                "validityPeriod": validityPeriod
+                "partnerReferenceNo": makeQris.external_id,
+                // "validityPeriod": validityPeriod
             };
 
             const requestBodyString = JSON.stringify(requestBody);
@@ -89,33 +90,29 @@ export class AccessTokenService {
 
             const encryptedSymmetric = CryptoJS.AES.encrypt(`${signatureSymmetric}`, key).toString()
             const encrypttimestamp = CryptoJS.AES.encrypt(`${timestamp}`, key).toString()
-            const body = CryptoJS.AES.encrypt(`${requestBody}`, key).toString()
+            const body = CryptoJS.AES.encrypt(`${requestBodyString}`, key).toString()
             const token = CryptoJS.AES.encrypt(`${accessToken}`, key).toString()
 
             return {
-                requestBody,
-                signatureSymmetric,
-                accessToken,
-                timestamp
+                encryptedSymmetric, encrypttimestamp, body, token, makeQris
             };
         } catch (err) {
-            console.error('Error generating signature:', err);
             throw err;
         }
     }
 
     async generateQrisBca(headers: any, requestData: any) {
-
+        const key = this.configService.get<string>('access_token_key');
         try {
             const body = {
                 "amount": {
-                    "value": `${requestData.value}`,
+                    "value": `15000.00`,
                     "currency": "IDR"
                 },
                 "merchantId": "000002094",
                 "terminalId": "A1026229",
                 "partnerReferenceNo": headers['x-external-id'],
-                "validityPeriod": `${requestData.validityPeriod}`
+                // "validityPeriod": `${requestData.validityPeriod}`
             };
 
             const headersData = {
@@ -128,7 +125,7 @@ export class AccessTokenService {
                 "Channel-ID": '95251'
             }
 
-            const generateResponse = await axios({
+            const response = await axios({
                 url: 'https://devapi.klikbca.com/openapi/v1.0/qr/qr-mpm-generate',
                 method: "POST",
                 headers: {
@@ -137,10 +134,19 @@ export class AccessTokenService {
                 data: JSON.stringify(body),
             })
 
-            return generateResponse.data;
+            const responseBody = CryptoJS.AES.encrypt(`${response.data}`, key).toString()
+
+            return response.data;
 
         } catch (err) {
+            console.log('====================================');
             console.log(err);
+            console.log('====================================');
+            const { responseCode, responseMessage } = err.response.data;
+            return {
+                statusCode: responseCode,
+                errorMessage: responseMessage
+            };
         }
     }
 
@@ -156,16 +162,16 @@ export class AccessTokenService {
                     currency: 'IDR',
                     bank_code: 'QRISBCA',
                     invoice_id: invoiceId,
-                    reference_id: this.generateRandomReferenceNumber(),
+                    external_id: this.generateRandomReferenceNumber(),
                     status_pembayaran: "ACTIVE",
                     expiration_date: expiresAt.toISOString(),
                 })
             );
 
-            const { amount, currency, bank_code, invoice_id, reference_id } = makeQris;
+            const { expiration_date } = makeQris;
 
             return {
-                amount, currency, bank_code, invoice_id, reference_id
+                expiration_date
             };
         } catch (error) {
             console.error("Error:", error);
@@ -265,7 +271,7 @@ export class AccessTokenService {
             expiresAt.setMinutes(expiresAt.getMinutes() + 30);
 
             const invoiceId = `INVBCA${randomInvoice}`;
-            const referenceId = this.generateRandomReferenceNumber();
+            const externalId = this.generateRandomReferenceNumber();
 
             const makeQris = await this.paymentRepository.save(
                 this.paymentRepository.create({
@@ -274,23 +280,22 @@ export class AccessTokenService {
                     customer: customerNom,
                     bank_code: 'VABCA',
                     invoice_id: invoiceId,
-                    reference_id: referenceId,
+                    external_id: externalId,
                     status_pembayaran: "ACTIVE",
                     expiration_date: expiresAt.toISOString(),
                 })
             );
 
-            const { amount, currency, bank_code, invoice_id, reference_id } = makeQris;
+            const { amount, currency, bank_code, invoice_id, external_id } = makeQris;
 
             return {
-                amount, currency, bank_code, invoice_id, reference_id
+                amount, currency, bank_code, invoice_id, external_id
             };
         } catch (error) {
             console.error("Error:", error);
             throw error;
         }
     }
-
 
     generateRandomReferenceNumber(): string {
         const min = 1000000000;
