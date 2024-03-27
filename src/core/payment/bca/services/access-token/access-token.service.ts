@@ -67,17 +67,15 @@ export class AccessTokenService {
             const X_TIMESTAMP = moment().tz('Asia/Jakarta');
             const timestamp = X_TIMESTAMP.format('YYYY-MM-DDTHH:mm:ssZ');
             const validityPeriod = X_TIMESTAMP.clone().add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ssZ');
-            const makeQris = await this.postBodyQris(amounts);
 
             const requestBody = {
                 "amount": {
-                    "value": "15000.00",
-                    "currency": makeQris.currency
+                    "value": amounts,
+                    "currency": "IDR"
                 },
                 "merchantId": '000002094',
                 "terminalId": 'A1026229',
-                "partnerReferenceNo": makeQris.external_id,
-                // "validityPeriod": validityPeriod
+                "partnerReferenceNo": this.generateRandomReferenceNumber(),
             };
 
             const requestBodyString = JSON.stringify(requestBody);
@@ -94,25 +92,27 @@ export class AccessTokenService {
             const token = CryptoJS.AES.encrypt(`${accessToken}`, key).toString()
 
             return {
-                encryptedSymmetric, encrypttimestamp, body, token, makeQris
-            };
+                encryptedSymmetric, encrypttimestamp, body, token
+            }
         } catch (err) {
             throw err;
         }
     }
 
     async generateQrisBca(headers: any, requestData: any) {
+        const randomInvoice = this.generateRandomReferenceNumber()
+        const invoiceId = `INVBCA${randomInvoice}`;
+        const partnerReferenceNo = headers['x-external-id'];
         const key = this.configService.get<string>('access_token_key');
         try {
             const body = {
                 "amount": {
-                    "value": `15000.00`,
+                    "value": `${requestData.value}`,
                     "currency": "IDR"
                 },
                 "merchantId": "000002094",
                 "terminalId": "A1026229",
-                "partnerReferenceNo": headers['x-external-id'],
-                // "validityPeriod": `${requestData.validityPeriod}`
+                "partnerReferenceNo": `${requestData.partnerReferenceNo}`,
             };
 
             const headersData = {
@@ -133,10 +133,30 @@ export class AccessTokenService {
                 },
                 data: JSON.stringify(body),
             })
+            const { value } = requestData;
+            const expiresAt = new Date();
+            expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+            const makeQris = await this.paymentRepository.save(
+                this.paymentRepository.create({
+                    amount: value,
+                    currency: 'IDR',
+                    bank_code: 'QRISBCA',
+                    invoice_id: invoiceId,
+                    external_id: partnerReferenceNo,
+                    status_pembayaran: "ACTIVE",
+                    expiration_date: expiresAt.toISOString(),
+                })
+            );
 
             const responseBody = CryptoJS.AES.encrypt(`${response.data}`, key).toString()
-
-            return response.data;
+            const responseBcaQris = response.data
+            const {expiration_date, external_id, amount} = makeQris
+            return {
+                responseBcaQris,
+                expiration_date,
+                external_id,
+                amount
+            };
 
         } catch (err) {
             console.log('====================================');
@@ -147,35 +167,6 @@ export class AccessTokenService {
                 statusCode: responseCode,
                 errorMessage: responseMessage
             };
-        }
-    }
-
-    async postBodyQris(amounts: any): Promise<any> {
-        try {
-            const randomInvoice = this.generateRandomReferenceNumber()
-            const invoiceId = `INVBCA${randomInvoice}`;
-            const expiresAt = new Date();
-            expiresAt.setMinutes(expiresAt.getMinutes() + 30);
-            const makeQris = await this.paymentRepository.save(
-                this.paymentRepository.create({
-                    amount: amounts,
-                    currency: 'IDR',
-                    bank_code: 'QRISBCA',
-                    invoice_id: invoiceId,
-                    external_id: this.generateRandomReferenceNumber(),
-                    status_pembayaran: "ACTIVE",
-                    expiration_date: expiresAt.toISOString(),
-                })
-            );
-
-            const { expiration_date } = makeQris;
-
-            return {
-                expiration_date
-            };
-        } catch (error) {
-            console.error("Error:", error);
-            throw error;
         }
     }
 

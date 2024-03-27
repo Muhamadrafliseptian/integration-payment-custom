@@ -45,7 +45,7 @@ export class PaymentController {
 
   @Post('bca/qris')
   @HttpCode(HttpStatus.OK)
-  async generateQris(@Headers() headers: string, @Body() requestData: any): Promise<string> {
+  async generateQris(@Headers() headers: string, @Body() requestData: any): Promise<any> {
     try {
       return this.accessTokenService.generateQrisBca(headers, requestData);
     } catch (error) {
