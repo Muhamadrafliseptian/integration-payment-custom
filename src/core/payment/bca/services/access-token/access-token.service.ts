@@ -138,8 +138,11 @@ export class AccessTokenService {
 
     async generateQrisBca(headers: any, requestData: any) {
         
-        console.log(requestData.validityPeriod);
+        console.log("Ada");
+        console.log(headers);
+        console.log("123");
         
+
         try {
             const body = {
                 "amount": {
