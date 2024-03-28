@@ -1,16 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UsersModule } from './users/users.module';
-import { LayananModule } from './core/layanan/layanan.module';
-import { RolesModule } from './core/roles/roles.module';
 import { BcaModule } from './core/payment/bca/bca/bca.module';
-import { User } from './typeorm/entities/User';
-import { Layanan } from './typeorm/entities/Layanan';
-import { Role } from './typeorm/entities/Roles';
 import { XenditEntity } from './typeorm/entities/Xendit';
 import { PaymentConfigModule } from './core/module/config/config.module';
-import { TestPayments } from './typeorm/entities/TestingPayment';
 import { ChannelEwalletEntity } from './typeorm/entities/ChannelEwallet';
 import { ChannelEwalletModule } from './core/payment/channel_ewallet/channel_ewallet.module';
 import { SchedulerModule } from './core/module/scheduler/scheduler.module';
@@ -33,11 +26,7 @@ import { ChannelQrCode } from './typeorm/entities/ChannelQr';
           'db_integration_payment',
         ),
         entities: [
-          User,
-          Layanan,
-          Role,
           XenditEntity,
-          TestPayments,
           ChannelEwalletEntity,
           ChannelQrCode,
         ],
@@ -45,9 +34,6 @@ import { ChannelQrCode } from './typeorm/entities/ChannelQr';
       }),
       inject: [ConfigService],
     }),
-    UsersModule,
-    LayananModule,
-    RolesModule,
     BcaModule,
     ConfigModule,
     ChannelEwalletModule,

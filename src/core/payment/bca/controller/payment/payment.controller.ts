@@ -9,26 +9,20 @@ import {
   Headers
 } from '@nestjs/common';
 import { PaymentService } from '../../services/payment/payment.service';
-// import { PageOptionsDto } from 'src/core/dtos/pagination/page-option.dto';
-// import { PageDto } from 'src/core/dtos/pagination/page.dto';
 import {
   CreatePayment,
   CreateLink,
 } from 'src/core/dtos/payment/create-payment.dto';
-// import { XenditEntity } from 'src/typeorm/entities/Xendit';
 import { AccessTokenService } from '../../services/access-token/access-token.service';
 import { XenditEntity } from '../../../../../typeorm/entities/Xendit';
 import { AppGateway } from 'src/core/services_modules/app.gateway';
-import { request } from 'http';
-import { log } from 'console';
 
 @Controller('payment')
 export class PaymentController {
   constructor(
     private paymentService: PaymentService,
-    private readonly appGateway: AppGateway,
     private accessTokenService: AccessTokenService
-  ) {}
+  ) { }
 
   @Get('bank')
   @HttpCode(HttpStatus.OK)
@@ -36,58 +30,39 @@ export class PaymentController {
     return this.paymentService.getAvailableBank();
   }
 
-  // @Post('generate/qris')
-  // @HttpCode(HttpStatus.OK)
-  // async generateQrisWithSignature(@Body() requestBody: any) {
-  //   try {
-  //     // 1. Dapatkan signature asimetris
-  //     const [signature, formattedTimestamp] = await this.accessTokenService.getAsymmetricSignature();
-
-  //     console.log('====================================');
-  //     console.log(signature);
-  //     console.log('====================================');
-
-  //     // 2. Dapatkan akses token dan signature simetris untuk generate QRIS BCA
-  //     const qrisData = await this.accessTokenService.generateQrisBca(requestBody);
-
-  //     return qrisData; // Anda bisa langsung mengembalikan data QRIS BCA dari sini
-  //   } catch (err) {
-  //     console.error('Error generating QRIS BCA:', err);
-  //     throw err;
-  //   }
-  // }
-
-
-  @Post('access_token')
+  @Post('bca/generate/qris_symmetric_signature')
   @HttpCode(HttpStatus.OK)
-  async getAccessToken() {
-    return this.accessTokenService.createAccessToken()
+  async getSymmetricSignature(@Body('amount') amounts: any): Promise<any> {
+    return this.accessTokenService.getSymmetricSignature(amounts);
   }
 
-  @Post('get/symmetric_signature')
+  @Post('bca/generate/va_symmetric_signature')
   @HttpCode(HttpStatus.OK)
-  async getSymmetricSignature(@Body('amount') amount: any): Promise<any> {
-    return this.accessTokenService.getSymmetricSignature(amount);
+  async getVaSymmetric(@Body() body: { amount: any, customerNo: any }): Promise<any> {
+    const { amount, customerNo } = body;
+    return await this.accessTokenService.getSymmetricSignatureVa(amount, customerNo);
   }
 
-
-  @Post('get/qr_code')
+  @Post('bca/qris')
   @HttpCode(HttpStatus.OK)
-  async getSymmetric(@Headers() headers: string, @Body() requestData: any): Promise<string> {
+  async generateQris(@Headers() headers: string, @Body() requestData: any): Promise<any> {
     try {
       return this.accessTokenService.generateQrisBca(headers, requestData);
     } catch (error) {
-      // Tangani kesalahan di sini
-      console.log("Error :");
       console.log(error);
-      
     }
   }
 
-  @Post('qr/body')
+  @Post('bca/va')
   @HttpCode(HttpStatus.OK)
-  postBodyQr(@Body() @Body() requestData: any): Promise<string> {
-    return this.accessTokenService.postBodyQris(requestData);
+  async generateVa(@Body() requestData: any): Promise<string> {
+    try {
+      const result = await this.accessTokenService.generateVaBca(requestData);
+      return result;
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   @Get(':invoice_id/:bank_code/:external_id/get')
@@ -131,43 +106,9 @@ export class PaymentController {
     return this.paymentService.createVirtualAccount(createPaymentDto);
   }
 
-  @Post('qrcode')
-  createPaymentQr(@Body() createPaymentDto: CreatePayment) {
-    return this.paymentService.createQrisCode(createPaymentDto);
-  }
-
   @Post('ewallet')
   createPaymentEwallet(@Body() createPaymentDto: CreatePayment) {
     return this.paymentService.createtEwallet(createPaymentDto);
-  }
-
-  @Post('initialize_linked/directdebit')
-  createLinked(@Body() createPaymentDto: CreateLink) {
-    return this.paymentService.initializeLinkedDirectDebit(createPaymentDto);
-  }
-
-  @Post('qrcode/callback')
-  @HttpCode(HttpStatus.OK)
-  async updateQqrPayment(@Body() qrData: any): Promise<any> {
-    try {
-      const status = qrData?.data?.status;
-      const reference_id = qrData?.data?.qr_id;
-      const updatedPayment = await this.paymentService.updatePaymentQrStatus(
-        reference_id,
-        status,
-      );
-      this.appGateway.sendStatusToClient(updatedPayment.status);
-      return {
-        success: true,
-        data: qrData,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Failed to update payment status',
-        error: error.message,
-      };
-    }
   }
 
   @Post('virtualaccount/callback')
@@ -196,7 +137,6 @@ export class PaymentController {
         updatedPayment.status === 'PAID' &&
         updatedPayment.status_pembayaran === 'SUCCESS'
       ) {
-        // this.appGateway.sendStatusToClient(updatedPayment.status);
 
         const extendedResponse = {
           ...xenditCallbackData,
@@ -234,6 +174,40 @@ export class PaymentController {
       };
     }
   }
+
+  // @Post('initialize_linked/directdebit')
+  // createLinked(@Body() createPaymentDto: CreateLink) {
+  //   return this.paymentService.initializeLinkedDirectDebit(createPaymentDto);
+  // }
+
+  // @Post('qrcode')
+  // createPaymentQr(@Body() createPaymentDto: CreatePayment) {
+  //   return this.paymentService.createQrisCode(createPaymentDto);
+  // }
+
+  // @Post('qrcode/callback')
+  // @HttpCode(HttpStatus.OK)
+  // async updateQqrPayment(@Body() qrData: any): Promise<any> {
+  //   try {
+  //     const status = qrData?.data?.status;
+  //     const reference_id = qrData?.data?.qr_id;
+  //     const updatedPayment = await this.paymentService.updatePaymentQrStatus(
+  //       reference_id,
+  //       status,
+  //     );
+  //     this.appGateway.sendStatusToClient(updatedPayment.status);
+  //     return {
+  //       success: true,
+  //       data: qrData,
+  //     };
+  //   } catch (error) {
+  //     return {
+  //       success: false,
+  //       message: 'Failed to update payment status',
+  //       error: error.message,
+  //     };
+  //   }
+  // }
 
   // @Post('linked_account/directdebit')
   // @HttpCode(HttpStatus.OK)
