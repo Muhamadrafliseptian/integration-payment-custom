@@ -147,25 +147,29 @@ export class AccessTokenService {
                     expiration_date: expiresAt.toISOString(),
                 })
             );
+            const responseBcaQris = response.data.responseCode
 
-            const responseBody = CryptoJS.AES.encrypt(`${response.data}`, key).toString()
-            const responseBcaQris = response.data
-            const {expiration_date, external_id, amount} = makeQris
-            return {
-                responseBcaQris,
-                expiration_date,
-                external_id,
-                amount
-            };
+            if (responseBcaQris === "2004700") {
+                const responseBody = CryptoJS.AES.encrypt(`${response.data}`, key).toString()
+                const responseBcaQris = response.data
+                const { expiration_date, external_id, amount } = makeQris
+                return {
+                    responseBcaQris,
+                    expiration_date,
+                    external_id,
+                    amount
+                };
+            } else {
+                return {
+                    responseBcaQris,
+                };
+            }
 
         } catch (err) {
-            console.log('====================================');
-            console.log(err);
-            console.log('====================================');
             const { responseCode, responseMessage } = err.response.data;
+            const responseBcaQris = err.response.data
             return {
-                statusCode: responseCode,
-                errorMessage: responseMessage
+                responseBcaQris,
             };
         }
     }
