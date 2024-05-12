@@ -15,6 +15,7 @@ import {
 import axios, { AxiosError } from 'axios';
 import { AppGateway } from '../../../../services_modules/app.gateway';
 import * as CryptoJS from "crypto-js"
+import { log } from 'console';
 
 @Injectable()
 export class PaymentService {
@@ -32,7 +33,7 @@ export class PaymentService {
     private readonly linkedDebitService: LinkedDebitService,
     private readonly linkedOtpService: LinkOtpDebitService,
     private readonly appGateway: AppGateway,
-  ) {}
+  ) { }
 
   private encryptData(data: any): string {
     const encryptedData = CryptoJS.AES.encrypt(JSON.stringify(data), this.key).toString();
@@ -62,8 +63,8 @@ export class PaymentService {
       }
 
       const { amount, status, expiration_date, account_number } = payment;
-      
-      const convert = {amount, bank_code, status, invoice_id, expiration_date, external_id, account_number};
+
+      const convert = { amount, bank_code, status, invoice_id, expiration_date, external_id, account_number };
       const encrypt = this.encryptData(convert)
 
       return encrypt;
@@ -141,6 +142,9 @@ export class PaymentService {
         apiKey,
       );
 
+      console.log("Pembayaran Custom");
+      console.log(response);
+
       const xenditPayment = await this.paymentRepository.save(
         this.paymentRepository.create({
           external_id: paymentDetails.external_id,
@@ -152,6 +156,11 @@ export class PaymentService {
           expiration_date: response.data.expiration_date,
           payment_method: 'VIRTUAL ACCOUNT',
           status_pembayaran: 'ACTIVE',
+          description: "",
+          customer: "",
+          items: "",
+          actions: "",
+          is_closed: false,
         }),
       );
       const extendedResponse = {
@@ -172,7 +181,7 @@ export class PaymentService {
         };
       }
 
-      throw { success: false, error: { message: 'Terjadi kesalahann' } };
+      throw { success: false, error: { message: error } };
     }
   }
 
@@ -310,7 +319,7 @@ export class PaymentService {
       }
 
       payment.status = newStatus;
-    } catch (err) {}
+    } catch (err) { }
   }
 
   async updateDebitPayment(
@@ -334,7 +343,7 @@ export class PaymentService {
       const updatedPayment = await this.paymentRepository.save(payment);
 
       return updatedPayment;
-    } catch (err) {}
+    } catch (err) { }
   }
 
   async updatePaymentQrStatus(

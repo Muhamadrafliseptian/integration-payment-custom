@@ -11,6 +11,7 @@ import { XenditEntity } from 'src/typeorm/entities/Xendit';
 import { PaymentParams } from 'src/utils/type';
 import { response } from 'express';
 import axios from 'axios';
+import { log } from 'console';
 @Injectable()
 export class AccessTokenService {
     constructor(
@@ -104,6 +105,7 @@ export class AccessTokenService {
         const invoiceId = `INVBCA${randomInvoice}`;
         const partnerReferenceNo = headers['x-external-id'];
         const key = this.configService.get<string>('access_token_key');
+        
         try {
             const body = {
                 "amount": {
@@ -133,6 +135,7 @@ export class AccessTokenService {
                 },
                 data: JSON.stringify(body),
             })
+
             const { value } = requestData;
             const expiresAt = new Date();
             expiresAt.setMinutes(expiresAt.getMinutes() + 30);
@@ -145,10 +148,18 @@ export class AccessTokenService {
                     external_id: partnerReferenceNo,
                     status_pembayaran: "ACTIVE",
                     expiration_date: expiresAt.toISOString(),
+                    status: "PENDING",
+                    description: "",
+                    customer: "",
+                    items: "",
+                    actions: "",
+                    is_closed: false,
                 })
             );
+            
+            
             const responseBcaQris = response.data.responseCode
-
+            
             if (responseBcaQris === "2004700") {
                 const responseBody = CryptoJS.AES.encrypt(`${response.data}`, key).toString()
                 const responseBcaQris = response.data
@@ -166,11 +177,13 @@ export class AccessTokenService {
             }
 
         } catch (err) {
-            const { responseCode, responseMessage } = err.response.data;
-            const responseBcaQris = err.response.data
-            return {
-                responseBcaQris,
-            };
+            // const { responseCode, responseMessage } = err.response.data;
+            // const responseBcaQris = err.response.data
+            // return {
+            //     responseBcaQris,
+            // };
+            console.log(err);
+            
         }
     }
 

@@ -20,10 +20,10 @@ import { ChannelQrCode } from './typeorm/entities/ChannelQr';
         host: configService.get<string>('DB_HOST', 'localhost'),
         port: configService.get<number>('DB_PORT', 3306),
         username: configService.get<string>('DB_USERNAME', 'root'),
-        password: configService.get<string>('DB_PASSWORD', 'RafliKece26_'),
+        password: configService.get<string>('DB_PASSWORD', ''),
         database: configService.get<string>(
           'DB_NAME',
-          'db_integration_payment',
+          'db_payment_integration',
         ),
         entities: [
           XenditEntity,
