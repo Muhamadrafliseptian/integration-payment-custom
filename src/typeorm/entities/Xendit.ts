@@ -41,13 +41,13 @@ export class XenditEntity {
   @Column()
   amount: number;
 
-  @Column({ nullable: false, type: 'text' })
+  @Column({ nullable: true, type: 'text' })
   description: string;
 
-  @Column({ nullable: false, type: 'text' })
+  @Column({ nullable: true, type: 'text' })
   customer: string;
 
-  @Column({ nullable: false, type: 'text' })
+  @Column({ nullable: true, type: 'text' })
   items: string;
 
   @Column({ nullable: true, type: 'text' })

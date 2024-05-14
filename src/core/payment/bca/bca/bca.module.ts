@@ -14,6 +14,7 @@ import {
   LinkedDebitService,
   LinkOtpDebitService,
   AccessTokenPoint,
+  QrCodeServiceDataGet
 } from 'src/core/services_modules/endpoint-service';
 import { AppGateway } from 'src/core/services_modules/app.gateway';
 
@@ -32,6 +33,7 @@ import { AppGateway } from 'src/core/services_modules/app.gateway';
     AsymmetricSignatureService,
     AccessTokenService,
     AccessTokenPoint,
+    QrCodeServiceDataGet
   ],
 })
 export class BcaModule {}

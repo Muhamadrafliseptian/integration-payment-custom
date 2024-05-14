@@ -11,6 +11,7 @@ import {
   EWalletService,
   LinkedDebitService,
   LinkOtpDebitService,
+  QrCodeServiceDataGet
 } from '../../../../services_modules/endpoint-service';
 import axios, { AxiosError } from 'axios';
 import { AppGateway } from '../../../../services_modules/app.gateway';
@@ -25,6 +26,7 @@ export class PaymentService {
   constructor(
     @InjectRepository(XenditEntity)
     private readonly paymentRepository: Repository<XenditEntity>,
+    private readonly qaServiceGet: QrCodeServiceDataGet,
     private readonly configService: ConfigService,
     private readonly vaService: VirtualAccountService,
     private readonly listBankService: AvailableBankServices,
@@ -121,6 +123,17 @@ export class PaymentService {
     }
   }
 
+  async getQrCodeOne(id: string) {
+    try {
+      const apiKey = this.configService.get<string>('XENDIT_API_KEY');
+      const response = await this.qaServiceGet.getQrCodeById(apiKey, id);
+      return response
+    } catch (err) {
+      console.log(err);
+      
+      throw err;
+    }
+  }
 
   async createVirtualAccount(paymentDetails: TestPaymentXendit): Promise<any> {
     try {
@@ -185,9 +198,10 @@ export class PaymentService {
     }
   }
 
-  async createQrisCode(qrDetails: PaymentParams): Promise<any> {
+  async createQrisCode(amount: any, qrDetails: PaymentParams): Promise<any> {
     const apiKey = this.configService.get<string>('XENDIT_API_KEY');
 
+    const parseAmount = parseInt(amount);
     const reference_id = this.generateRandomWord();
 
     const expiresAt = new Date();
@@ -200,7 +214,7 @@ export class PaymentService {
           reference_id,
           type: 'DYNAMIC',
           currency: qrDetails.currency,
-          amount: 10000,
+          amount: parseAmount,
           channel_code,
           expires_at: expiresAt,
         },
@@ -222,6 +236,7 @@ export class PaymentService {
         }),
       );
 
+
       const extendedResponse = {
         ...response.data,
         invoice_id: 'INV-TNOS123',
@@ -230,6 +245,9 @@ export class PaymentService {
 
       return extendedResponse;
     } catch (error) {
+
+      console.log(error);
+
       if (error.response && error.response.data) {
         const { error_code, message } = error.response.data;
         return {

@@ -21,7 +21,8 @@ import { AppGateway } from 'src/core/services_modules/app.gateway';
 export class PaymentController {
   constructor(
     private paymentService: PaymentService,
-    private accessTokenService: AccessTokenService
+    private accessTokenService: AccessTokenService,
+    private appGateway: AppGateway
   ) { }
 
   @Get('bank')
@@ -180,35 +181,68 @@ export class PaymentController {
   //   return this.paymentService.initializeLinkedDirectDebit(createPaymentDto);
   // }
 
-  // @Post('qrcode')
-  // createPaymentQr(@Body() createPaymentDto: CreatePayment) {
-  //   return this.paymentService.createQrisCode(createPaymentDto);
-  // }
+  @Post('qrcode')
+  @HttpCode(HttpStatus.OK)
+  async createPaymentQr(@Body() body: { amount: any }, @Body() createPaymentDto: CreatePayment) {
+    const { amount } = body;
+    return await this.paymentService.createQrisCode(amount, createPaymentDto);
+  }
 
-  // @Post('qrcode/callback')
-  // @HttpCode(HttpStatus.OK)
-  // async updateQqrPayment(@Body() qrData: any): Promise<any> {
-  //   try {
-  //     const status = qrData?.data?.status;
-  //     const reference_id = qrData?.data?.qr_id;
-  //     const updatedPayment = await this.paymentService.updatePaymentQrStatus(
-  //       reference_id,
-  //       status,
-  //     );
-  //     this.appGateway.sendStatusToClient(updatedPayment.status);
-  //     return {
-  //       success: true,
-  //       data: qrData,
-  //     };
-  //   } catch (error) {
-  //     return {
-  //       success: false,
-  //       message: 'Failed to update payment status',
-  //       error: error.message,
-  //     };
+  @Post('qrcode/callback')
+  @HttpCode(HttpStatus.OK)
+  async updateQqrPayment(@Body() qrData: any): Promise<any> {
+    try {
+      const status = qrData?.data?.status;
+      const reference_id = qrData?.data?.qr_id;
+
+      const updatedPayment = await this.paymentService.updatePaymentQrStatus(
+        reference_id,
+        status,
+      );
+
+      this.appGateway.sendStatusToClient(updatedPayment.status);
+      return {
+        success: true,
+        data: qrData,
+      };
+    } catch (error) {
+      console.log(error);
+
+      return {
+        success: false,
+        message: 'Failed to update payment status',
+        error: error.message,
+      };
+    }
+  }
+
+  @Get('qr-code/:id/get')
+  async getQrCodes(
+    @Param('id') id: string,
+  ) {
+    const paymentDetails = await this.paymentService.getQrCodeOne(id);
+    if (!paymentDetails) {
+      console.log('Unable to find payment');
+    } else {
+      return paymentDetails;
+    }
+  }
+
+  // @Get('qr-codes-get/:id')
+  // async getQrCodes(
+  //   @Param('id') qr_id: string,
+  // ) {
+  //   const paymentDetails = await this.paymentService.getQrCodesFindOne(
+  //     qr_id,
+  //   );
+  //   if (!paymentDetails) {
+  //     console.log('Unable to find payment');
+  //   } else {
+  //     console.log("Maknaan");
+      
+  //     return paymentDetails;
   //   }
   // }
-
   // @Post('linked_account/directdebit')
   // @HttpCode(HttpStatus.OK)
   // async getDirectDebitCallback(@Body() directDebitData: any): Promise<any> {

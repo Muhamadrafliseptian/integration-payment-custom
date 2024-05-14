@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import axios, { AxiosResponse } from 'axios';
 
 @Injectable()
@@ -30,6 +31,19 @@ export class QrCodeService {
       headers: {
         'api-version': '2022-07-31',
       },
+    });
+  }
+}
+
+@Injectable()
+export class QrCodeServiceDataGet {
+  async getQrCodeById(apiKey: string, id:string): Promise<AxiosResponse> {
+    return axios.get(`https://api.xendit.co/qr_codes/${id}`, {
+      auth: { username: apiKey, password: '' },
+      headers: {
+        'api-version': '2022-07-31',
+      },
+      responseType: 'json'
     });
   }
 }
@@ -77,13 +91,16 @@ export class LinkOtpDebitService {
 
 @Injectable()
 export class AccessTokenPoint {
-  async createTokenPoint(data: any, headers: Record<string, string>): Promise<AxiosResponse> {
+  async createTokenPoint(
+    data: any,
+    headers: Record<string, string>,
+  ): Promise<AxiosResponse> {
     return axios.post(
       'https://devapi.klikbca.com/openapi/v1.0/access-token/b2b',
       data,
       {
-        headers: headers
-      }
+        headers: headers,
+      },
     );
   }
 }

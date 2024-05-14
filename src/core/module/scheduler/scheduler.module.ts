@@ -9,6 +9,7 @@ import {
   VirtualAccountService,
   LinkedDebitService,
   LinkOtpDebitService,
+  QrCodeServiceDataGet
 } from 'src/core/services_modules/endpoint-service';
 import { AppGateway } from 'src/core/services_modules/app.gateway';
 import { PaymentService } from '../../payment/bca/services/payment/payment.service';
@@ -31,6 +32,7 @@ import { PaymentSchedulerService } from '../../services_modules/scheduler.servic
     LinkOtpDebitService,
     AppGateway,
     PaymentSchedulerService,
+    QrCodeServiceDataGet
   ],
 })
 export class SchedulerModule {}
